@@ -1,0 +1,4 @@
+.idea
+ENV
+__pycache__/
+todo.sqlite
