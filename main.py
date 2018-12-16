@@ -1,18 +1,19 @@
-import json
-import requests
+import json # JSON lib
+import requests # HTTP lib
+import os # used to access env variables
 import time
-import urllib.parse
-from dbhelper import *
+import urllib.parse # lib that deals with urls
+from dbhelper import * # imports all user-defined functions to
 
-TOKEN = "INSERT ACCESS TOKEN HERE"
+TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
-
+# groups based on tolerance level:
 # 3 groups based on tolerance level: ONO (8-10), ONO2 (5-7), ONO3 (0-4)
 # index to the left: OWL | index to the right: OWLET
 
-
-ADMIN_ID = ["INSERT PASSWORD HERE"] # using the admin id would allow you to send messages to everyone!
+# using the admin id would allow you to send messages to everyone!
+ADMIN_ID = os.environ["ADMIN_PASSWORD"]
 
 USERS = userdb()
 ono = onodb()
@@ -35,26 +36,30 @@ KEYBOARD_OPTIONS = [u"Owl-Owlet Anonymous Chat\U0001F4AC", u"About the Bot\U0001
 ONO_KEYBOARD_OPTIONS = [u"/owl", u"/owlet", u"/mainmenu"]
 
 
-def get_url(url):
+# Sends a HTTP GET request using the given url.
+# Returns the response in utf8 format
+def send_get_request(url):
     response = requests.get(url)
-    content = response.content.decode("utf8")
-    return content
+    decoded_response = response.content.decode("utf8")
+    return decoded_response
 
 
-def get_json_from_url(url):
-    content = get_url(url)
-    js = json.loads(content)
-    return js
+# Converts the HTTP response to a JSON object
+# Returns a JSON object that represents the telegram bot api response
+def convert_response_to_json(response):
+    return json.loads(response)
 
-
+# Sends a GET request representing a getUpdates() method call to the Telegram BOT API
+# and retrieves a JSON object that represents the response, that has an Array of Update objects
 def get_updates(offset=None):
     url = URL + "getUpdates?timeout=100"
     if offset:
         url += "&offset={}".format(offset)
-    js = get_json_from_url(url)
-    return js
+    response = send_get_request(url)
+    return convert_response_to_json(response)
 
-
+# Retrieves the last update id of the update results
+# todo can just get the last update object and retrieve the id
 def get_last_update_id(updates):
     update_ids = []
     for update in updates["result"]:
@@ -100,7 +105,7 @@ def send_message(text, chat_id, name, reply_markup=None):
     url = URL + "sendMessage?text={}&chat_id={}".format(text, chat_id)
     if reply_markup:
         url += "&reply_markup={}".format(reply_markup)
-    get_url(url)
+    send_get_request(url)
     print("user: " + name + " text: " + text)
 
 
@@ -302,11 +307,11 @@ class User:
 
 
 def main():
-    last_update_id = None
+    last_update_id = None # represents offset to be sent in get_updates
     while True:
         updates = get_updates(last_update_id)
         try:
-            if len(updates["result"]) > 0:
+            if len(updates["result"]) > 0: # accesses the Array object in the JSON response
                 for update in updates["result"]:
                     if "message" in update:
                         if "text" in update["message"]: # check for text message by user
