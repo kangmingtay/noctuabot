@@ -51,6 +51,8 @@ def convert_response_to_json(response):
 
 # Sends a GET request representing a getUpdates() method call to the Telegram BOT API
 # and retrieves a JSON object that represents the response, that has an Array of Update objects
+# URL used in GET request is appended to make a getUpdates() method call.
+# If @param offset is not None, then it is appended to the URL.
 def get_updates(offset=None):
     url = URL + "getUpdates?timeout=100"
     if offset:
@@ -58,15 +60,14 @@ def get_updates(offset=None):
     response = send_get_request(url)
     return convert_response_to_json(response)
 
-# Retrieves the last update id of the update results
-# todo can just get the last update object and retrieve the id
+# Gets the last updated id of the update results
 def get_last_update_id(updates):
     update_ids = []
     for update in updates["result"]:
         update_ids.append(int(update["update_id"]))
     return max(update_ids)
 
-
+# Gets
 def get_last_chat_id_and_text(updates):
     num_updates = len(updates["result"])
     last_update = num_updates - 1
@@ -86,15 +87,6 @@ def remove_keyboard():
     return json.dumps(reply_markup)
 
 
-# def send_message(text, chat_id, reply_markup=None):
-#     text = urllib.parse.quote_plus(text)
-#     print(text)
-#     url = URL + "sendMessage?text={}&chat_id={}&parse_mode=Markdown".format(text, chat_id)
-#     if reply_markup:
-#         url += "&reply_markup={}".format(reply_markup)
-#     get_url(url)
-
-
 def send_message(text, chat_id, name, reply_markup=None):
     try:
         text = (text.encode("utf8"))
@@ -106,13 +98,12 @@ def send_message(text, chat_id, name, reply_markup=None):
     if reply_markup:
         url += "&reply_markup={}".format(reply_markup)
     send_get_request(url)
-    print("user: " + name + " text: " + text)
-
+    print("receiving user: " + name + "\ntext: " + text)
 
 
 # BOT RESPONSES
 def hello_greeting(name):
-    message = "Hello there, " + name + "! Nocbot at your service! " + u"\U0001F989"
+    message = "Hello there, " + name + "! Oscar at your service! " + u"\U0001F989"
     return message
 
 
@@ -305,39 +296,47 @@ class User:
         else:
             send_message(SEND_CONNECTION_FAILED, chat_id, name)
 
+def find_existing_user_then_stage(text, chat_id, name, users):
+    for user in users:  # in the user list
+        if chat_id == user.id:  # if there is an existing user
+            if text == "/start" or text == "/mainmenu":
+                user.stage = user.mainmenu
+                user.stage(text, chat_id, name)
+            else:
+                user.stage(text, chat_id, name)
+            break
+        else:
+            continue
+
+
+def setup_user_then_stage(text,chat_id, name, users):
+        new_user = User(chat_id)  # create a new User object
+        users.append(new_user)  # add new user to the global user list
+        USERS.add_user(chat_id, name)  # add user profile to the db
+        if text == "/mainmenu":
+            new_user.stage = new_user.mainmenu
+            new_user.stage(text, chat_id, name)
+        else:
+            new_user.stage(text, chat_id, name)
+
 
 def main():
     last_update_id = None # represents offset to be sent in get_updates
     while True:
         updates = get_updates(last_update_id)
         try:
-            if len(updates["result"]) > 0: # accesses the Array object in the JSON response
-                for update in updates["result"]:
-                    if "message" in update:
-                        if "text" in update["message"]: # check for text message by user
-                            text = update["message"]["text"] # get message sent by user
-                            chat_id = update["message"]["chat"]["id"] # get user chat id
-                            name = update["message"]["from"]["first_name"] # get user name
+            if len(updates["result"]) > 0:  # accesses the Array object in the JSON response
+                for update in updates["result"]:  # iterates through the updates Array
+                    if "message" in update and "text" in update["message"]:  # check for text message by user
+                            text = update["message"]["text"]  # get message sent by user
+                            chat_id = update["message"]["chat"]["id"]  # get user chat id
+                            name = update["message"]["from"]["first_name"]  # get user name
                             if chat_id > 0:
-                                for user in users: # in the user list
-                                    if chat_id == user.id: # if there is an existing user
-                                        if text == "/start" or text == "/mainmenu":
-                                            user.stage = user.mainmenu
-                                            user.stage(text, chat_id, name)
-                                        else:
-                                            user.stage(text, chat_id, name)
-                                        break
-                                    else:
-                                        continue
-                                if chat_id not in [user.id for user in users]: # new user
-                                    new_user = User(chat_id)           # create a new User object
-                                    users.append(new_user)          # add new user to the global user list
-                                    USERS.add_user(chat_id, name)      # add user profile to the db
-                                    if text == "/mainmenu":
-                                        new_user.stage = new_user.mainmenu
-                                        new_user.stage(text, chat_id, name)
-                                    else:
-                                        new_user.stage(text, chat_id, name)
+                                # todo can use dictionary to improve complexity
+                                if chat_id not in [user.id for user in users]:  # new user
+                                    setup_user_then_stage(text, chat_id, name, users)
+                                else:
+                                    find_existing_user_then_stage(text, chat_id, name, users)
                 last_update_id = get_last_update_id(updates) + 1
         except KeyError:
             print("I got a KeyError!")
@@ -349,5 +348,8 @@ def main():
 if __name__ == '__main__':
     print("Initialised....")
     USERS.setup()
+    print("User database set up done.")
     ono.setup()
+    print("ONO database set up done.")
+    print("Starting main()...")
     main()
