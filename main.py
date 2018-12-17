@@ -11,14 +11,19 @@ BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 # groups based on tolerance level:
 # 8 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5, AM6, AM7, AM8
 # index to the left: ANGEL | index to the right: MORTAL
+AM = ["1234", "9583", "5635"]
+AM2 = []
+AM3 = []
+AM4 = []
+
 
 # using the admin id would allow you to send messages to everyone!
 ADMIN_ID = os.environ["ADMIN_PASSWORD"]
 
-USERS = userdb()
-ono = onodb()
+user_db = userdb()
+am_db = onodb()
 users = [] # list of users objects
-ono_participants = [1231] # list of player chat_ids
+am_participants = [] # list of player chat_ids
 
 # EMOJI UNICODE
 CAKE = u"\U0001F382"
@@ -31,12 +36,12 @@ SPEECH_BUBBLE = u"\U0001F4AC"
 THINKING_FACE = u"\U0001F914"
 
 # GREETINGS
-ABOUT_THE_BOT = SPOUTING_WHALE + " *About Nocbot* " + SPOUTING_WHALE + "\n\n" + CAKE + " Birthday: June 2017\n\n" + \
+ABOUT_THE_BOT = SPOUTING_WHALE + " *About OrcaBot* " + SPOUTING_WHALE + "\n\n" + CAKE + " Birthday: June 2017\n\n" + \
                 ROBOT + " Currently maintained by Kang Ming + Zhi Yu :)\n\n" + SKULL +\
                 " Past Bot Developers: Bai Chuan, Fiz, Youkuan\n\n"
 AM_GREETING = "Hello there, Anonymous! Click or type any of the following:\n" +\
-               "/owl: Chat with your Owl\n" +\
-               "/owlet: Chat with your Owlet\n" +\
+               "/angel: Chat with your Angel\n" +\
+               "/mortal: Chat with your Mortal\n" +\
                "/mainmenu: Exits the Chat feature, and return to the Main Menu"
 AM_LOGIN_GREETING = "Please enter your 4-digit UserID.\n\n" +\
                      "or click /mainmenu to exit the registration process"
@@ -44,11 +49,11 @@ INVALID_PIN = "You have entered the wrong 4-digit number. Please try again, or t
 REDIRECT_GREETING = "Did you mean: /start"
 REQUEST_ADMIN_ID = "Please enter your Admin ID to proceed."
 SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?"
-SEND_CONNECTION_FAILED = u"Your message has failed to send, because he/she has yet to sign in to Nocbot." +\
+SEND_CONNECTION_FAILED = u"Your message has failed to send, because he/she has yet to sign in to the game." +\
                          u" Please be patient and try again soon!" + SMILEY
-SUCCESSFUL_OWL_CONNECTION = "You have been connected with your Owl." +\
+SUCCESSFUL_ANGEL_CONNECTION = "You have been connected with your Angel." +\
                             " Anything you type here will be sent anonymously to him/her."
-SUCCESSFUL_OWLET_CONNECTION = "You have been connected with your Owlet." +\
+SUCCESSFUL_MORTAL_CONNECTION = "You have been connected with your Mortal." +\
                               " Anything you type here will be sent anonymously to him/her."
 HELLO_GREETING = "Hello there, {}! Oscar at your service! " + SPOUTING_WHALE
 HELP_MESSAGE = "<User guide for bot features>\n\n"
@@ -56,13 +61,13 @@ GAME_RULES_MESSAGE = "<Insert games rules>"
 
 # TELEGRAM KEYBOARD OPTIONS
 ABOUT_THE_BOT_KEY = u"About the Bot" + " " + SPOUTING_WHALE
-ANONYMOUS_CHAT_KEY = u"Owl-Owlet Anonymous Chat" + " " + SPEECH_BUBBLE
+ANONYMOUS_CHAT_KEY = u"Angel-Mortal Anonymous Chat" + " " + SPEECH_BUBBLE
 HELP_KEY = "Help" + " " + THINKING_FACE
 RULES_KEY = "Game Rules"
-OWL_KEY = u"/owl"
-OWLET_KEY = u"/owlet"
+ANGEL_KEY = u"/angel"
+MORTAL_KEY = u"/mortal"
 MENU_KEY = u"/mainmenu"
-AM_KEYBOARD_OPTIONS = [OWL_KEY, OWLET_KEY, MENU_KEY]
+AM_KEYBOARD_OPTIONS = [ANGEL_KEY, MORTAL_KEY, MENU_KEY]
 KEYBOARD_OPTIONS = [ANONYMOUS_CHAT_KEY, ABOUT_THE_BOT_KEY, HELP_KEY, RULES_KEY]
 
 
@@ -143,8 +148,8 @@ def send_message(text, recipient_chat_id, recipient_name, reply_markup=None):
 class User:
     def __init__(self, id):
         self.id = id
-        self.owl = 0
-        self.owlet = 0
+        self.angel = 0
+        self.mortal = 0
 
     # Function to open up the main menu with keyboard options.
     def mainmenu(self, text, chat_id, name):
@@ -159,7 +164,7 @@ class User:
             send_message(formatted_hello_greeting, chat_id, name, keyboard)
 
         elif text == ANONYMOUS_CHAT_KEY:
-            owners = [x[2] for x in ono.get_four()]
+            owners = [x[2] for x in am_db.get_four()]
             if chat_id in owners:       # ??? if 4 digit alphanumeric ID is in the list
                 send_message(AM_GREETING, chat_id, name, remove_keyboard())
                 self.stage = self.anonymous_chat
@@ -198,16 +203,16 @@ class User:
     # chat_id is required to match the number of parameters in stage()
     # Sends a message to all players.
     def send_all(self, text, chat_id, name):
-        list_of_ids = ONO + ONO2 + ONO3 + ONO4
+        list_of_ids = AM + AM2 + AM3 + AM4
         for person_id in list_of_ids:
-            owner_data = ono.get_owner_from_four(person_id)
+            owner_data = am_db.get_owner_from_four(person_id)
             recipient_data = owner_data.fetchone()
             # print(recipient_data)
             if recipient_data is not None:
                 # print(recipient_data[2])
-                ono_participants.append(recipient_data[2])
+                am_participants.append(recipient_data[2])
         # print(len(ono_participants))
-        for cid in ono_participants:  # gets the telegram chat_id each time
+        for cid in am_participants:  # gets the telegram chat_id each time
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message("From the Admin:\n" + text, cid, name, keyboard)
         return
@@ -215,134 +220,134 @@ class User:
     # Registers a user.
     # Verifies the user PIN number first, then registers user in ...
     def register(self, user_pin, chat_id, name):        # text will be the 4 alphanumeric digits
-        if user_pin not in ONO and user_pin not in ONO2 and user_pin not in ONO3 and user_pin not in ONO4:
+        if user_pin not in AM and user_pin not in AM2 and user_pin not in AM3 and user_pin not in AM4:
             send_message(INVALID_PIN, chat_id, name, remove_keyboard())
             return
         else:
-            ono.register(user_pin, chat_id, name)
+            am_db.register(user_pin, chat_id, name)
             send_message(AM_GREETING, chat_id, name, remove_keyboard())
             self.stage = self.anonymous_chat
 
 
     def anonymous_chat(self, text, chat_id, name):
-        if text == "/owl":
-            for x in ono.get_four_from_owner(chat_id):
+        if text == ANGEL_KEY:
+            for x in am_db.get_four_from_owner(chat_id):
                 me = x[1]
                 break
-            if me in ONO:
-                owl = ONO[(ONO.index(me) - 1)]
-            elif me in ONO2:
-                owl = ONO2[(ONO2.index(me) - 1)]
-            elif me in ONO4:
-                owl = ONO4[(ONO4.index(me) - 1)]
+            if me in AM:
+                angel = AM[(AM.index(me) - 1)]
+            elif me in AM2:
+                angel = AM2[(AM2.index(me) - 1)]
+            elif me in AM4:
+                angel = AM4[(AM4.index(me) - 1)]
             else:
-                owl = ONO3[(ONO3.index(me) - 1)]
-            for x in ono.get_owner_from_four(owl):
-                self.owl = x[2]
+                angel = AM3[(AM3.index(me) - 1)]
+            for x in am_db.get_owner_from_four(angel):
+                self.angel = x[2]
                 break
             keyboard = build_keyboard(AM_KEYBOARD_OPTIONS)
-            send_message(SUCCESSFUL_OWL_CONNECTION, chat_id, name, keyboard)
-            self.stage = self.owlchat
-        elif text == "/owlet":
-            for x in ono.get_four_from_owner(chat_id):
+            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, name, keyboard)
+            self.stage = self.angelchat
+        elif text == MORTAL_KEY:
+            for x in am_db.get_four_from_owner(chat_id):
                 me = x[1]
                 break
-            if me in ONO:
-                owlet = ONO[(ONO.index(me) + 1)%len(ONO)]
-            elif me in ONO2:
-                owlet = ONO2[(ONO2.index(me) + 1)%len(ONO2)]
-            elif me in ONO4:
-                owlet = ONO4[(ONO4.index(me) + 1)%len(ONO4)]
+            if me in AM:
+                mortal = AM[(AM.index(me) + 1)%len(AM)]
+            elif me in AM2:
+                mortal = AM2[(AM2.index(me) + 1)%len(AM2)]
+            elif me in AM4:
+                mortal = AM4[(AM4.index(me) + 1)%len(AM4)]
             else:
-                owlet = ONO3[(ONO3.index(me) + 1)%len(ONO3)]
-            for x in ono.get_owner_from_four(owlet):
-                self.owlet = x[2]
+                mortal = AM3[(AM3.index(me) + 1)%len(AM3)]
+            for x in am_db.get_owner_from_four(mortal):
+                self.mortal = x[2]
                 break
             keyboard = build_keyboard(AM_KEYBOARD_OPTIONS)
-            send_message(SUCCESSFUL_OWLET_CONNECTION, chat_id, name, keyboard)
-            self.stage = self.owletchat
+            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, name, keyboard)
+            self.stage = self.mortalchat
 
 
-    def owlchat(self, text, chat_id, name):
-        if text == "/owlet":
-            for x in ono.get_four_from_owner(chat_id):
+    def angelchat(self, text, chat_id, name):
+        if text == MORTAL_KEY:
+            for x in am_db.get_four_from_owner(chat_id):
                 me = x[1]
                 break
-            if me in ONO:
-                owlet = ONO[(ONO.index(me) + 1)%len(ONO)]
-            elif me in ONO2:
-                owlet = ONO2[(ONO2.index(me) + 1)%len(ONO2)]
-            elif me in ONO4:
-                owlet = ONO4[(ONO4.index(me) + 1)%len(ONO4)]
+            if me in AM:
+                mortal = AM[(AM.index(me) + 1)%len(AM)]
+            elif me in AM2:
+                mortal = AM2[(AM2.index(me) + 1)%len(AM2)]
+            elif me in AM4:
+                mortal = AM4[(AM4.index(me) + 1)%len(AM4)]
             else:
-                owlet = ONO3[(ONO3.index(me) + 1)%len(ONO3)]
-            for x in ono.get_owner_from_four(owlet):
-                self.owlet = x[2]
+                mortal = AM3[(AM3.index(me) + 1)%len(AM3)]
+            for x in am_db.get_owner_from_four(mortal):
+                self.mortal = x[2]
                 break
-            send_message(SUCCESSFUL_OWLET_CONNECTION, chat_id, name)
-            self.stage = self.owletchat
+            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, name)
+            self.stage = self.mortalchat
             return
-        elif text == "/owl":
-            for x in ono.get_four_from_owner(chat_id):
+        elif text == ANGEL_KEY:
+            for x in am_db.get_four_from_owner(chat_id):
                 me = x[1]
                 break
-            if me in ONO:
-                owl = ONO[(ONO.index(me) - 1)]
-            elif me in ONO2:
-                owl = ONO2[(ONO2.index(me) - 1)]
-            elif me in ONO4:
-                owl = ONO4[(ONO4.index(me) - 1)]
+            if me in AM:
+                angel = AM[(AM.index(me) - 1)]
+            elif me in AM2:
+                angel = AM2[(AM2.index(me) - 1)]
+            elif me in AM4:
+                angel = AM4[(AM4.index(me) - 1)]
             else:
-                owl = ONO3[(ONO3.index(me) - 1)]
-            for x in ono.get_owner_from_four(owl):
-                self.owl = x[2]
+                angel = AM3[(AM3.index(me) - 1)]
+            for x in am_db.get_owner_from_four(angel):
+                self.angel = x[2]
                 break
-            send_message(SUCCESSFUL_OWL_CONNECTION, chat_id, name)
+            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, name)
             return
-        if self.owl != 0:
-            send_message("From your Owlet:\n" + text, self.owl, name)
+        if self.angel != 0:
+            send_message("From your Mortal:\n" + text, self.angel, name)
         else:
             send_message(SEND_CONNECTION_FAILED, chat_id, name)
 
 
-    def owletchat(self, text, chat_id, name):
-        if text == "/owl":
-            for x in ono.get_four_from_owner(chat_id):
+    def mortalchat(self, text, chat_id, name):
+        if text == ANGEL_KEY:
+            for x in am_db.get_four_from_owner(chat_id):
                 me = x[1]
                 break
-            if me in ONO:
-                owl = ONO[(ONO.index(me) - 1)]
-            elif me in ONO2:
-                owl = ONO2[(ONO2.index(me) - 1)]
-            elif me in ONO4:
-                owl = ONO4[(ONO4.index(me) - 1)]
+            if me in AM:
+                angel = AM[(AM.index(me) - 1)]
+            elif me in AM2:
+                angel = AM2[(AM2.index(me) - 1)]
+            elif me in AM4:
+                angel = AM4[(AM4.index(me) - 1)]
             else:
-                owl = ONO3[(ONO3.index(me) - 1)]
-            for x in ono.get_owner_from_four(owl):
-                self.owl = x[2]
+                angel = AM3[(AM3.index(me) - 1)]
+            for x in am_db.get_owner_from_four(angel):
+                self.angel = x[2]
                 break
-            send_message(SUCCESSFUL_OWL_CONNECTION, chat_id, name)
-            self.stage = self.owlchat
+            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, name)
+            self.stage = self.angelchat
             return
-        elif text == "/owlet":
-            for x in ono.get_four_from_owner(chat_id):
+        elif text == MORTAL_KEY:
+            for x in am_db.get_four_from_owner(chat_id):
                 me = x[1]
                 break
-            if me in ONO:
-                owlet = ONO[(ONO.index(me) + 1)%len(ONO)]
-            elif me in ONO2:
-                owlet = ONO2[(ONO2.index(me) + 1)%len(ONO2)]
-            elif me in ONO4:
-                owlet = ONO4[(ONO4.index(me) + 1)%len(ONO4)]
+            if me in AM:
+                mortal = AM[(AM.index(me) + 1)%len(AM)]
+            elif me in AM2:
+                mortal = AM2[(AM2.index(me) + 1)%len(AM2)]
+            elif me in AM4:
+                mortal = AM4[(AM4.index(me) + 1)%len(AM4)]
             else:
-                owlet = ONO3[(ONO3.index(me) + 1)%len(ONO3)]
-            for x in ono.get_owner_from_four(owlet):
-                self.owlet = x[2]
+                mortal = AM3[(AM3.index(me) + 1)%len(AM3)]
+            for x in am_db.get_owner_from_four(mortal):
+                self.mortal = x[2]
                 break
-            send_message(SUCCESSFUL_OWLET_CONNECTION, chat_id, name)
+            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, name)
             return
-        if self.owlet != 0:
-            send_message("From your Owl:\n" + text, self.owlet, name)
+        if self.mortal != 0:
+            send_message("From your Angel:\n" + text, self.mortal, name)
         else:
             send_message(SEND_CONNECTION_FAILED, chat_id, name)
 
@@ -365,7 +370,7 @@ def find_existing_user_then_stage(text, chat_id, name, user_list):
 def setup_user_then_stage(text, chat_id, name, user_list):
         new_user = User(chat_id)  # create a new User object
         user_list.append(new_user)  # add new user to the global user list
-        USERS.add_user(chat_id, name)  # add user profile to the db
+        user_db.add_user(chat_id, name)  # add user profile to the db
         if text == "/mainmenu":
             new_user.stage = new_user.mainmenu
             new_user.stage(text, chat_id, name)
@@ -400,9 +405,9 @@ def main():
 
 if __name__ == '__main__':
     print("Initialised....")
-    USERS.setup()
+    user_db.setup()
     print("User database set up done.")
-    ono.setup()
-    print("ONO database set up done.")
+    am_db.setup()
+    print("AM database set up done.")
     print("Starting main()...")
     main()
