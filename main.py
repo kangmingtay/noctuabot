@@ -6,7 +6,7 @@ import urllib.parse # lib that deals with urls
 from dbhelper import * # imports all user-defined functions to
 
 TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
-URL = "https://api.telegram.org/bot{}/".format(TOKEN)
+BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
 # groups based on tolerance level:
 # 3 groups based on tolerance level: ONO (8-10), ONO2 (5-7), ONO3 (0-4)
@@ -18,22 +18,42 @@ ADMIN_ID = os.environ["ADMIN_PASSWORD"]
 USERS = userdb()
 ono = onodb()
 users = [] # list of users objects
-ono_participants = []
+ono_participants = [1231]
+
+# EMOJI UNICODE
+CAKE = u"\U0001F382"
+WHALE = u"\U0001F40B"
+ROBOT = u"\U0001F916"
+SKULL = u"\U0001F480"
+SMILEY = u"\U0001F642"
+SPOUTING_WHALE = u"\U0001F433"
+SPEECH_BUBBLE = u"\U0001F4AC"
+
 
 # GREETINGS
-ONO_GREETING = "Hello there, Anonymous! Click or type any of the following:\n/owl: Chat with your Owl\n/owlet: Chat with your Owlet\n/mainmenu: Exits the Chat feature, and return to the Main Menu"
-ONO_LOGIN_GREETING = "Please enter your 4-digit UserID.\n\nor click /mainmenu to exit the registration process"
+ABOUT_THE_BOT = SPOUTING_WHALE + " *About Nocbot* " + SPOUTING_WHALE + "\n\n" + CAKE + " Birthday: June 2017\n\n" + \
+                ROBOT + " Currently maintained by Kang Ming + Zhi Yu :)\n\n" + SKULL +\
+                " Past Bot Developers: Bai Chuan, Fiz, Youkuan\n\n"
+AM_GREETING = "Hello there, Anonymous! Click or type any of the following:\n" +\
+               "/owl: Chat with your Owl\n" +\
+               "/owlet: Chat with your Owlet\n" +\
+               "/mainmenu: Exits the Chat feature, and return to the Main Menu"
+AM_LOGIN_GREETING = "Please enter your 4-digit UserID.\n\n" +\
+                     "or click /mainmenu to exit the registration process"
 INVALID_PIN = "You have entered the wrong 4-digit number. Please try again, or type /mainmenu to exit."
-SUCCESSFUL_OWL_CONNECTION = "You have been connected with your Owl. Anything you type here will be sent anonymously to him/her."
-SUCCESSFUL_OWLET_CONNECTION = "You have been connected with your Owlet. Anything you type here will be sent anonymously to him/her."
-ABOUT_THE_BOT = u'\U0001F989' + " *About Nocbot* " + u'\U0001F989' + "\n\n" + u"\U0001F382" + " Birthday: June 2017\n\n" + u"\U0001F916" + " Currently maintained by Kang Ming :)\n\n" + u"\U0001F480" + " Past Bot Developers: Bai Chuan, Fiz, Youkuan\n\n"
 REDIRECT_GREETING = "Did you mean: /start"
-SEND_CONNECTION_FAILED = u"Your message has failed to send, because he/she has yet to sign in to Nocbot. Please be patient and try again soon! \U0001F642"
 REQUEST_ADMIN_ID = "Please enter your Admin ID to proceed."
 SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?"
+SEND_CONNECTION_FAILED = u"Your message has failed to send, because he/she has yet to sign in to Nocbot." +\
+                         u" Please be patient and try again soon!" + SMILEY
+SUCCESSFUL_OWL_CONNECTION = "You have been connected with your Owl." +\
+                            " Anything you type here will be sent anonymously to him/her."
+SUCCESSFUL_OWLET_CONNECTION = "You have been connected with your Owlet." +\
+                              " Anything you type here will be sent anonymously to him/her."
+
 # TELEGRAM KEYBOARD OPTIONS
-KEYBOARD_OPTIONS = [u"Owl-Owlet Anonymous Chat\U0001F4AC", u"About the Bot\U0001F989"]
-ONO_KEYBOARD_OPTIONS = [u"/owl", u"/owlet", u"/mainmenu"]
+AM_KEYBOARD_OPTIONS = [u"/owl", u"/owlet", u"/mainmenu"]
+KEYBOARD_OPTIONS = [u"Owl-Owlet Anonymous Chat" + SPEECH_BUBBLE, u"About the Bot" + SPOUTING_WHALE]
 
 
 # Sends a HTTP GET request using the given url.
@@ -54,7 +74,7 @@ def convert_response_to_json(response):
 # URL used in GET request is appended to make a getUpdates() method call.
 # If @param offset is not None, then it is appended to the URL.
 def get_updates(offset=None):
-    url = URL + "getUpdates?timeout=100"
+    url = BASE_URL + "getUpdates?timeout=100"
     if offset:
         url += "&offset={}".format(offset)
     response = send_get_request(url)
@@ -90,14 +110,14 @@ def remove_keyboard():
     reply_markup = {"remove_keyboard": True, "selective": True}
     return json.dumps(reply_markup)
 
-
+# Sends a text in a message to another telegram user, using the telegram sendMessage method
 def send_message(text, recipient_chat_id, recipient_name, reply_markup=None):
     try:
         encoded_text = (text.encode("utf8"))
     except:
         pass
-    request_text = urllib.parse.quote_plus(encoded_text)
-    request_url = URL + "sendMessage?text={}&chat_id={}".format(request_text, recipient_chat_id)
+    request_text = urllib.parse.quote_plus(encoded_text) # converts url-reserved characters in encoded string
+    request_url = BASE_URL + "sendMessage?text={}&chat_id={}".format(request_text, recipient_chat_id)
     if reply_markup:
         request_url += "&reply_markup={}".format(reply_markup)
     send_get_request(request_url)
@@ -106,7 +126,7 @@ def send_message(text, recipient_chat_id, recipient_name, reply_markup=None):
 
 # BOT RESPONSES
 def hello_greeting(name):
-    message = "Hello there, " + name + "! Oscar at your service! " + u"\U0001F989"
+    message = "Hello there, " + name + "! Oscar at your service! " + u"\U0001F433"
     return message
 
 
@@ -130,10 +150,10 @@ class User:
         elif text == u"Owl-Owlet Anonymous Chat\U0001F4AC":
             owners = [x[2] for x in ono.get_four()]
             if chat_id in owners:       # ??? if 4 digit alphanumeric ID is in the list
-                send_message(ONO_GREETING, chat_id, name, remove_keyboard())
+                send_message(AM_GREETING, chat_id, name, remove_keyboard())
                 self.stage = self.Anonymous
             else:
-                send_message(ONO_LOGIN_GREETING, chat_id, name, remove_keyboard())
+                send_message(AM_LOGIN_GREETING, chat_id, name, remove_keyboard())
                 self.stage = self.register
         elif text == "/admin":
             send_message(REQUEST_ADMIN_ID, chat_id, name, remove_keyboard())
@@ -166,7 +186,6 @@ class User:
             # print(cid)
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message("From the Admin:\n" + text, cid, name, keyboard)
-        # print("ok")
         return
 
     def register(self, text, chat_id, name):        # text will be the 4 alphanumeric digits
@@ -175,7 +194,7 @@ class User:
             return
         else:
             ono.register(text, chat_id, name)
-            send_message(ONO_GREETING, chat_id, name, remove_keyboard())
+            send_message(AM_GREETING, chat_id, name, remove_keyboard())
             self.stage = self.Anonymous
 
     def Anonymous(self, text, chat_id, name):
@@ -194,7 +213,7 @@ class User:
             for x in ono.get_owner_from_four(owl):
                 self.owl = x[2]
                 break
-            keyboard = build_keyboard(ONO_KEYBOARD_OPTIONS)
+            keyboard = build_keyboard(AM_KEYBOARD_OPTIONS)
             send_message(SUCCESSFUL_OWL_CONNECTION, chat_id, name, keyboard)
             self.stage = self.owlchat
         elif text == "/owlet":
@@ -212,7 +231,7 @@ class User:
             for x in ono.get_owner_from_four(owlet):
                 self.owlet = x[2]
                 break
-            keyboard = build_keyboard(ONO_KEYBOARD_OPTIONS)
+            keyboard = build_keyboard(AM_KEYBOARD_OPTIONS)
             send_message(SUCCESSFUL_OWLET_CONNECTION, chat_id, name, keyboard)
             self.stage = self.owletchat
 
