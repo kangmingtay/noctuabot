@@ -9,8 +9,8 @@ TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
 # groups based on tolerance level:
-# 3 groups based on tolerance level: ONO (8-10), ONO2 (5-7), ONO3 (0-4)
-# index to the left: OWL | index to the right: OWLET
+# 8 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5, AM6, AM7, AM8
+# index to the left: ANGEL | index to the right: MORTAL
 
 # using the admin id would allow you to send messages to everyone!
 ADMIN_ID = os.environ["ADMIN_PASSWORD"]
@@ -28,7 +28,7 @@ SKULL = u"\U0001F480"
 SMILEY = u"\U0001F642"
 SPOUTING_WHALE = u"\U0001F433"
 SPEECH_BUBBLE = u"\U0001F4AC"
-
+THINKING_FACE = u"\U0001F914"
 
 # GREETINGS
 ABOUT_THE_BOT = SPOUTING_WHALE + " *About Nocbot* " + SPOUTING_WHALE + "\n\n" + CAKE + " Birthday: June 2017\n\n" + \
@@ -51,11 +51,19 @@ SUCCESSFUL_OWL_CONNECTION = "You have been connected with your Owl." +\
 SUCCESSFUL_OWLET_CONNECTION = "You have been connected with your Owlet." +\
                               " Anything you type here will be sent anonymously to him/her."
 HELLO_GREETING = "Hello there, {}! Oscar at your service! " + SPOUTING_WHALE
-
+HELP_MESSAGE = "<User guide for bot features>"
+GAME_RULES = "<Insert games rules>"
 
 # TELEGRAM KEYBOARD OPTIONS
-AM_KEYBOARD_OPTIONS = [u"/owl", u"/owlet", u"/mainmenu"]
-KEYBOARD_OPTIONS = [u"Owl-Owlet Anonymous Chat" + " " + SPEECH_BUBBLE, u"About the Bot" + " " + SPOUTING_WHALE]
+ABOUT_THE_BOT_KEY = u"About the Bot" + " " + SPOUTING_WHALE
+ANONYMOUS_CHAT_KEY = u"Owl-Owlet Anonymous Chat" + " " + SPEECH_BUBBLE
+HELP_KEY = "Help" + " " + THINKING_FACE
+RULES_KEY = "Game Rules"
+OWL_KEY = u"/owl"
+OWLET_KEY = u"/owlet"
+MENU_KEY = u"/mainmenu"
+AM_KEYBOARD_OPTIONS = [OWL_KEY, OWLET_KEY, MENU_KEY]
+KEYBOARD_OPTIONS = [ANONYMOUS_CHAT_KEY, ABOUT_THE_BOT_KEY, HELP_KEY, RULES_KEY]
 
 
 # Sends a HTTP GET request using the given url.
@@ -90,6 +98,7 @@ def get_last_update_id(updates):
     for update in updates["result"]:
         update_ids.append(int(update["update_id"]))
     return max(update_ids)
+
 
 # Gets the text and chat id of the last update
 # Returns a tuple containing the text and chat id of the last update
@@ -143,12 +152,12 @@ class User:
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message(formatted_hello_greeting, chat_id, name, keyboard)
 
-        elif text == u"About the Bot" + " " + SPOUTING_WHALE:
+        elif text == ABOUT_THE_BOT_KEY:
             send_message(ABOUT_THE_BOT, chat_id, name)
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message(formatted_hello_greeting, chat_id, name, keyboard)
 
-        elif text == u"Owl-Owlet Anonymous Chat" + " " + SPEECH_BUBBLE:
+        elif text == ANONYMOUS_CHAT_KEY:
             owners = [x[2] for x in ono.get_four()]
             if chat_id in owners:       # ??? if 4 digit alphanumeric ID is in the list
                 send_message(AM_GREETING, chat_id, name, remove_keyboard())
@@ -159,9 +168,19 @@ class User:
         elif text == "/admin":
             send_message(REQUEST_ADMIN_ID, chat_id, name, remove_keyboard())
             self.stage = self.register_admin
+
+        elif text == "/help":
+            send_message(HELP_MESSAGE, chat_id, name, remove_keyboard())
+
+        elif text == "/rules":
+            send_message(GAME_RULES, chat_id, name, remove_keyboard())
+
         else:
             send_message(REDIRECT_GREETING, chat_id, name, remove_keyboard())
 
+    # A method pointer that is reassigned constantly.
+    # Once reassigned to another method with same number of parameters, then the next user input will be directed
+    # to the newly reassigned method.
     def stage(self, text, chat_id, name):
         self.mainmenu(text, chat_id, name)
 
@@ -183,8 +202,7 @@ class User:
                 # print(recipient_data[2])
                 ono_participants.append(recipient_data[2])
         # print(len(ono_participants))
-        for cid in ono_participants: # gets the telegram chat_id each time
-            # print(cid)
+        for cid in ono_participants:  # gets the telegram chat_id each time
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message("From the Admin:\n" + text, cid, name, keyboard)
         return
@@ -278,6 +296,7 @@ class User:
         else:
             send_message(SEND_CONNECTION_FAILED, chat_id, name)
 
+
     def owletchat(self, text, chat_id, name):
         if text == "/owl":
             for x in ono.get_four_from_owner(chat_id):
@@ -320,6 +339,7 @@ class User:
             send_message(SEND_CONNECTION_FAILED, chat_id, name)
 
 
+# Searches existing user list for a registered user and stages the user
 def find_existing_user_then_stage(text, chat_id, name, user_list):
     for registered_user in user_list:  # in the user list
         if chat_id == registered_user.id:  # if there is an existing user
@@ -333,6 +353,7 @@ def find_existing_user_then_stage(text, chat_id, name, user_list):
             continue
 
 
+# Initialises a User object, adds it to the global list and the user database
 def setup_user_then_stage(text, chat_id, name, user_list):
         new_user = User(chat_id)  # create a new User object
         user_list.append(new_user)  # add new user to the global user list
