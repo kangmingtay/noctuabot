@@ -18,7 +18,7 @@ ADMIN_ID = os.environ["ADMIN_PASSWORD"]
 USERS = userdb()
 ono = onodb()
 users = [] # list of users objects
-ono_participants = [1231]
+ono_participants = [1231] # list of player chat_ids
 
 # EMOJI UNICODE
 CAKE = u"\U0001F382"
@@ -51,8 +51,8 @@ SUCCESSFUL_OWL_CONNECTION = "You have been connected with your Owl." +\
 SUCCESSFUL_OWLET_CONNECTION = "You have been connected with your Owlet." +\
                               " Anything you type here will be sent anonymously to him/her."
 HELLO_GREETING = "Hello there, {}! Oscar at your service! " + SPOUTING_WHALE
-HELP_MESSAGE = "<User guide for bot features>"
-GAME_RULES = "<Insert games rules>"
+HELP_MESSAGE = "<User guide for bot features>\n\n"
+GAME_RULES_MESSAGE = "<Insert games rules>"
 
 # TELEGRAM KEYBOARD OPTIONS
 ABOUT_THE_BOT_KEY = u"About the Bot" + " " + SPOUTING_WHALE
@@ -146,6 +146,7 @@ class User:
         self.owl = 0
         self.owlet = 0
 
+    # Function to open up the main menu with keyboard options.
     def mainmenu(self, text, chat_id, name):
         formatted_hello_greeting = HELLO_GREETING.format(name)
         if text == "/start" or text == "back" or text == "/mainmenu":
@@ -161,19 +162,19 @@ class User:
             owners = [x[2] for x in ono.get_four()]
             if chat_id in owners:       # ??? if 4 digit alphanumeric ID is in the list
                 send_message(AM_GREETING, chat_id, name, remove_keyboard())
-                self.stage = self.Anonymous
+                self.stage = self.anonymous_chat
             else:
                 send_message(AM_LOGIN_GREETING, chat_id, name, remove_keyboard())
                 self.stage = self.register
         elif text == "/admin":
             send_message(REQUEST_ADMIN_ID, chat_id, name, remove_keyboard())
-            self.stage = self.register_admin
+            self.stage = self.admin_login
 
-        elif text == "/help":
+        elif text == HELP_KEY:
             send_message(HELP_MESSAGE, chat_id, name, remove_keyboard())
 
-        elif text == "/rules":
-            send_message(GAME_RULES, chat_id, name, remove_keyboard())
+        elif text == RULES_KEY:
+            send_message(GAME_RULES_MESSAGE, chat_id, name, remove_keyboard())
 
         else:
             send_message(REDIRECT_GREETING, chat_id, name, remove_keyboard())
@@ -184,7 +185,9 @@ class User:
     def stage(self, text, chat_id, name):
         self.mainmenu(text, chat_id, name)
 
-    def register_admin(self, text, chat_id, name):
+    # Prompts the user for the admin password for login.
+    # If valid password, then then admin is allowed to send a message to all users.
+    def admin_login(self, text, chat_id, name):
         if text not in ADMIN_ID:
             send_message(INVALID_PIN, chat_id, name, remove_keyboard())
             return
@@ -192,6 +195,8 @@ class User:
             send_message(SEND_ADMIN_GREETING, chat_id, name, remove_keyboard())
             self.stage = self.send_all
 
+    # chat_id is required to match the number of parameters in stage()
+    # Sends a message to all players.
     def send_all(self, text, chat_id, name):
         list_of_ids = ONO + ONO2 + ONO3 + ONO4
         for person_id in list_of_ids:
@@ -207,16 +212,19 @@ class User:
             send_message("From the Admin:\n" + text, cid, name, keyboard)
         return
 
-    def register(self, text, chat_id, name):        # text will be the 4 alphanumeric digits
-        if text not in ONO and text not in ONO2 and text not in ONO3 and text not in ONO4:
+    # Registers a user.
+    # Verifies the user PIN number first, then registers user in ...
+    def register(self, user_pin, chat_id, name):        # text will be the 4 alphanumeric digits
+        if user_pin not in ONO and user_pin not in ONO2 and user_pin not in ONO3 and user_pin not in ONO4:
             send_message(INVALID_PIN, chat_id, name, remove_keyboard())
             return
         else:
-            ono.register(text, chat_id, name)
+            ono.register(user_pin, chat_id, name)
             send_message(AM_GREETING, chat_id, name, remove_keyboard())
-            self.stage = self.Anonymous
+            self.stage = self.anonymous_chat
 
-    def Anonymous(self, text, chat_id, name):
+
+    def anonymous_chat(self, text, chat_id, name):
         if text == "/owl":
             for x in ono.get_four_from_owner(chat_id):
                 me = x[1]
