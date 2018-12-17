@@ -52,15 +52,10 @@ SUCCESSFUL_OWLET_CONNECTION = "You have been connected with your Owlet." +\
                               " Anything you type here will be sent anonymously to him/her."
 HELLO_GREETING = "Hello there, {}! Oscar at your service! " + SPOUTING_WHALE
 
-# BOT RESPONSES
-def hello_greeting(name):
-    message =
-    return message
-
 
 # TELEGRAM KEYBOARD OPTIONS
 AM_KEYBOARD_OPTIONS = [u"/owl", u"/owlet", u"/mainmenu"]
-KEYBOARD_OPTIONS = [u"Owl-Owlet Anonymous Chat" + SPEECH_BUBBLE, u"About the Bot" + SPOUTING_WHALE]
+KEYBOARD_OPTIONS = [u"Owl-Owlet Anonymous Chat" + " " + SPEECH_BUBBLE, u"About the Bot" + " " + SPOUTING_WHALE]
 
 
 # Sends a HTTP GET request using the given url.
@@ -103,7 +98,7 @@ def get_last_chat_id_and_text(updates):
     last_update = num_updates - 1
     text = updates["result"][last_update]["message"]["text"]
     chat_id = updates["result"][last_update]["message"]["chat"]["id"]
-    return (text, chat_id)
+    return text, chat_id
 
 
 # Converts a defined range of options for a one-time keyboard, represented by a dictionary, into a JSON string
@@ -148,12 +143,12 @@ class User:
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message(formatted_hello_greeting, chat_id, name, keyboard)
 
-        elif text == u"About the Bot\U0001F989":
+        elif text == u"About the Bot" + " " + SPOUTING_WHALE:
             send_message(ABOUT_THE_BOT, chat_id, name)
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message(formatted_hello_greeting, chat_id, name, keyboard)
 
-        elif text == u"Owl-Owlet Anonymous Chat\U0001F4AC":
+        elif text == u"Owl-Owlet Anonymous Chat" + " " + SPEECH_BUBBLE:
             owners = [x[2] for x in ono.get_four()]
             if chat_id in owners:       # ??? if 4 digit alphanumeric ID is in the list
                 send_message(AM_GREETING, chat_id, name, remove_keyboard())
