@@ -50,6 +50,13 @@ SUCCESSFUL_OWL_CONNECTION = "You have been connected with your Owl." +\
                             " Anything you type here will be sent anonymously to him/her."
 SUCCESSFUL_OWLET_CONNECTION = "You have been connected with your Owlet." +\
                               " Anything you type here will be sent anonymously to him/her."
+HELLO_GREETING = "Hello there, {}! Oscar at your service! " + SPOUTING_WHALE
+
+# BOT RESPONSES
+def hello_greeting(name):
+    message =
+    return message
+
 
 # TELEGRAM KEYBOARD OPTIONS
 AM_KEYBOARD_OPTIONS = [u"/owl", u"/owlet", u"/mainmenu"]
@@ -69,6 +76,7 @@ def send_get_request(url):
 def convert_response_to_json(response):
     return json.loads(response)
 
+
 # Sends a GET request representing a getUpdates() method call to the Telegram BOT API
 # and retrieves a JSON object that represents the response, that has an Array of Update objects
 # URL used in GET request is appended to make a getUpdates() method call.
@@ -79,6 +87,7 @@ def get_updates(offset=None):
         url += "&offset={}".format(offset)
     response = send_get_request(url)
     return convert_response_to_json(response)
+
 
 # Gets the last updated id of the update results
 def get_last_update_id(updates):
@@ -104,11 +113,13 @@ def build_keyboard(items):
     reply_markup = {"keyboard": keyboard, "one_time_keyboard": True}
     return json.dumps(reply_markup)
 
+
 # Converts a defined range of keyboard options represented by a dictionary into a JSON string
 # Returns a JSON string that triggers the keyboard removal
 def remove_keyboard():
     reply_markup = {"remove_keyboard": True, "selective": True}
     return json.dumps(reply_markup)
+
 
 # Sends a text in a message to another telegram user, using the telegram sendMessage method
 def send_message(text, recipient_chat_id, recipient_name, reply_markup=None):
@@ -124,12 +135,6 @@ def send_message(text, recipient_chat_id, recipient_name, reply_markup=None):
     print("User: " + recipient_name + "\nReceived message: " + request_text)
 
 
-# BOT RESPONSES
-def hello_greeting(name):
-    message = "Hello there, " + name + "! Oscar at your service! " + u"\U0001F433"
-    return message
-
-
 # USER PROFILE DECISION MAKING
 class User:
     def __init__(self, id):
@@ -138,14 +143,15 @@ class User:
         self.owlet = 0
 
     def mainmenu(self, text, chat_id, name):
+        formatted_hello_greeting = HELLO_GREETING.format(name)
         if text == "/start" or text == "back" or text == "/mainmenu":
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
-            send_message(hello_greeting(name), chat_id, name, keyboard)
+            send_message(formatted_hello_greeting, chat_id, name, keyboard)
 
         elif text == u"About the Bot\U0001F989":
             send_message(ABOUT_THE_BOT, chat_id, name)
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
-            send_message(hello_greeting(name), chat_id, name, keyboard)
+            send_message(formatted_hello_greeting, chat_id, name, keyboard)
 
         elif text == u"Owl-Owlet Anonymous Chat\U0001F4AC":
             owners = [x[2] for x in ono.get_four()]
