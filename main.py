@@ -67,7 +67,8 @@ def get_last_update_id(updates):
         update_ids.append(int(update["update_id"]))
     return max(update_ids)
 
-# Gets
+# Gets the text and chat id of the last update
+# Returns a tuple containing the text and chat id of the last update
 def get_last_chat_id_and_text(updates):
     num_updates = len(updates["result"])
     last_update = num_updates - 1
@@ -76,29 +77,31 @@ def get_last_chat_id_and_text(updates):
     return (text, chat_id)
 
 
+# Converts a defined range of options for a one-time keyboard, represented by a dictionary, into a JSON string
+# Returns a JSON string that represents a dictionary containing the keyboard options
 def build_keyboard(items):
     keyboard = [[item] for item in items]
     reply_markup = {"keyboard": keyboard, "one_time_keyboard": True}
     return json.dumps(reply_markup)
 
-
+# Converts a defined range of keyboard options represented by a dictionary into a JSON string
+# Returns a JSON string that triggers the keyboard removal
 def remove_keyboard():
     reply_markup = {"remove_keyboard": True, "selective": True}
     return json.dumps(reply_markup)
 
 
-def send_message(text, chat_id, name, reply_markup=None):
+def send_message(text, recipient_chat_id, recipient_name, reply_markup=None):
     try:
-        text = (text.encode("utf8"))
+        encoded_text = (text.encode("utf8"))
     except:
         pass
-
-    text = urllib.parse.quote_plus(text)
-    url = URL + "sendMessage?text={}&chat_id={}".format(text, chat_id)
+    request_text = urllib.parse.quote_plus(encoded_text)
+    request_url = URL + "sendMessage?text={}&chat_id={}".format(request_text, recipient_chat_id)
     if reply_markup:
-        url += "&reply_markup={}".format(reply_markup)
-    send_get_request(url)
-    print("receiving user: " + name + "\ntext: " + text)
+        request_url += "&reply_markup={}".format(reply_markup)
+    send_get_request(request_url)
+    print("User: " + recipient_name + "\nReceived message: " + request_text)
 
 
 # BOT RESPONSES
@@ -296,22 +299,23 @@ class User:
         else:
             send_message(SEND_CONNECTION_FAILED, chat_id, name)
 
-def find_existing_user_then_stage(text, chat_id, name, users):
-    for user in users:  # in the user list
-        if chat_id == user.id:  # if there is an existing user
+
+def find_existing_user_then_stage(text, chat_id, name, user_list):
+    for registered_user in user_list:  # in the user list
+        if chat_id == registered_user.id:  # if there is an existing user
             if text == "/start" or text == "/mainmenu":
-                user.stage = user.mainmenu
-                user.stage(text, chat_id, name)
+                registered_user.stage = registered_user.mainmenu
+                registered_user.stage(text, chat_id, name)
             else:
-                user.stage(text, chat_id, name)
+                registered_user.stage(text, chat_id, name)
             break
         else:
             continue
 
 
-def setup_user_then_stage(text,chat_id, name, users):
+def setup_user_then_stage(text, chat_id, name, user_list):
         new_user = User(chat_id)  # create a new User object
-        users.append(new_user)  # add new user to the global user list
+        user_list.append(new_user)  # add new user to the global user list
         USERS.add_user(chat_id, name)  # add user profile to the db
         if text == "/mainmenu":
             new_user.stage = new_user.mainmenu
