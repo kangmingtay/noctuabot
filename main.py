@@ -8,16 +8,20 @@ from dbhelper import * # imports all user-defined functions to
 TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
-# groups based on tolerance level:
+# groups based on tolerance level, each player is assigned an 8-character unique alphanumeric identifier
 # 8 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5, AM6, AM7, AM8
 # index to the left: ANGEL | index to the right: MORTAL
-AM = ["1234"]
-AM2 = []
+AM = ["kangming", "zhiyu", "shaoyi", "chinnfang", "ben"]
+AM2 = ["1234"]
 AM3 = []
 AM4 = []
+AM5 = []
+AM6 = []
+AM7 = []
+AM8 = []
 
 
-# using the admin id would allow you to send messages to everyone!
+# Using the admin id would allow you to send messages to everyone
 ADMIN_ID = os.environ["ADMIN_PASSWORD"]
 
 user_db = userdb()
@@ -48,13 +52,17 @@ AM_LOGIN_GREETING = "Please enter your 4-digit UserID.\n\n" +\
 INVALID_PIN = "You have entered the wrong 4-digit number. Please try again, or type /mainmenu to exit."
 REDIRECT_GREETING = "Did you mean: /mainmenu"
 REQUEST_ADMIN_ID = "Please enter your Admin ID to proceed."
-SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?"
+SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?\n" +\
+                      "Whatever you submit from now on will be broadcasted to all users, be CAREFUL!" +\
+                      "Type /mainmenu to exit, once you have made your announcement."
 SEND_CONNECTION_FAILED = u"Your message has failed to send, because he/she has yet to sign in to the game." +\
                          u" Please be patient and try again soon!" + SMILEY + "\n\nType /mainmenu to go back."
 SUCCESSFUL_ANGEL_CONNECTION = "You have been connected with your Angel." +\
-                            " Anything you type here will be sent anonymously to him/her."
+                            " Anything you type here will be sent anonymously to him/her.\n" +\
+                            "To exit, type /mainmenu"
 SUCCESSFUL_MORTAL_CONNECTION = "You have been connected with your Mortal." +\
-                              " Anything you type here will be sent anonymously to him/her."
+                               " Anything you type here will be sent anonymously to him/her.\n" +\
+                               "To exit, type /mainmenu"
 HELLO_GREETING = "Hello there, {}! Oscar at your service! " + SPOUTING_WHALE
 HELP_MESSAGE = "<User guide for bot features>\n\n"
 GAME_RULES_MESSAGE = "<Insert games rules>"
@@ -64,8 +72,8 @@ ABOUT_THE_BOT_KEY = u"About the Bot" + " " + SPOUTING_WHALE
 ADMIN_KEY = u"/admin"
 ANGEL_KEY = u"/angel"
 ANONYMOUS_CHAT_KEY = u"Angel-Mortal Anonymous Chat" + " " + SPEECH_BUBBLE
-HELP_KEY = "Help" + " " + THINKING_FACE
-RULES_KEY = "Game Rules"
+HELP_KEY = u"/help"
+RULES_KEY = u"/rules"
 MENU_KEY = u"/mainmenu"
 MORTAL_KEY = u"/mortal"
 
@@ -132,11 +140,12 @@ def remove_keyboard():
     reply_markup = {"remove_keyboard": True, "selective": True}
     return json.dumps(reply_markup)
 
-
+# print() at end is the main logging feature of the program currently. Use `heroku logs --tail` to view
+# the logs in real time
 # Sends a text in a message to another telegram user, using the telegram sendMessage method
-def send_message(text, recipient_chat_id, recipient_name, reply_markup=None):
+def send_message(text, recipient_chat_id, recipient_name, sender_name="OrcaBot", reply_markup=None):
     try:
-        encoded_text = (text.encode("utf8"))
+        encoded_text = (text.encode("utf8"))  # newline characters in the string are escaped once encoded here
     except:
         pass
     request_text = urllib.parse.quote_plus(encoded_text) # converts url-reserved characters in encoded string
@@ -144,96 +153,100 @@ def send_message(text, recipient_chat_id, recipient_name, reply_markup=None):
     if reply_markup:
         request_url += "&reply_markup={}".format(reply_markup)
     send_get_request(request_url)
-    print("User: " + recipient_name + "\nReceived message: " + request_text)
+    print("From: {0!s}\nTo: {1!s}\nMessage: {2!s}".format(sender_name, recipient_name, text))
 
 
 # USER PROFILE DECISION MAKING
 class User:
-    def __init__(self, id):
-        self.id = id
-        self.angel = 0
-        self.mortal = 0
+    # Instance variables
+    def __init__(self, userid, username):
+        self.id = userid
+        self.name = username
+        self.angel_name = None
+        self.mortal_name = None
+        self.angel_id = 0
+        self.mortal_id = 0
 
     # Function to open up the main menu with keyboard options.
-    def mainmenu(self, text, chat_id, name):
-        formatted_hello_greeting = HELLO_GREETING.format(name)
+    def mainmenu(self, text, chat_id, placeholder):
+        formatted_hello_greeting = HELLO_GREETING.format(self.name)
         if text == MENU_KEY:
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
-            send_message(formatted_hello_greeting, chat_id, name, keyboard)
+            send_message(formatted_hello_greeting, chat_id, self.name, reply_markup=keyboard)
 
         elif text == ABOUT_THE_BOT_KEY:
-            send_message(ABOUT_THE_BOT, chat_id, name)
+            send_message(ABOUT_THE_BOT, chat_id, self.name)
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
-            send_message(formatted_hello_greeting, chat_id, name, keyboard)
+            send_message(formatted_hello_greeting, chat_id, self.name, reply_markup=keyboard)
 
         elif text == ANONYMOUS_CHAT_KEY:
             owners = [x[2] for x in am_db.get_four()]
-            if chat_id in owners:       # ??? if 4 digit alphanumeric ID is in the list
-                send_message(AM_GREETING, chat_id, name, remove_keyboard())
+            if chat_id in owners:       # ??? if 8 digit alphanumeric ID is in the list
+                send_message(AM_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
                 self.stage = self.anonymous_chat
             else:
-                send_message(AM_LOGIN_GREETING, chat_id, name, remove_keyboard())
+                send_message(AM_LOGIN_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
                 self.stage = self.register
 
         elif text == ADMIN_KEY:
-            send_message(REQUEST_ADMIN_ID, chat_id, name, remove_keyboard())
+            send_message(REQUEST_ADMIN_ID, chat_id, self.name, reply_markup=remove_keyboard())
             self.stage = self.admin_login
 
         elif text == HELP_KEY:
-            send_message(HELP_MESSAGE, chat_id, name, remove_keyboard())
+            send_message(HELP_MESSAGE, chat_id, self.name, reply_markup=remove_keyboard())
 
         elif text == RULES_KEY:
-            send_message(GAME_RULES_MESSAGE, chat_id, name, remove_keyboard())
+            send_message(GAME_RULES_MESSAGE, chat_id, self.name, reply_markup=remove_keyboard())
 
+        # Reopen main menu if no keywords match.
         else:
-            send_message(REDIRECT_GREETING, chat_id, name, remove_keyboard())
+            keyboard = build_keyboard(KEYBOARD_OPTIONS)
+            send_message(formatted_hello_greeting, chat_id, self.name, reply_markup=keyboard)
 
     # A method pointer that is reassigned constantly.
     # Once reassigned to another method with same number of parameters, then the next user input will be directed
     # to the newly reassigned method.
-    def stage(self, text, chat_id, name):
-        self.mainmenu(text, chat_id, name)
+    def stage(self, text, chat_id, placeholder):
+        self.mainmenu(text, chat_id, placeholder)
 
     # Prompts the user for the admin password for login.
     # If valid password, then then admin is allowed to send a message to all users.
-    def admin_login(self, text, chat_id, name):
+    def admin_login(self, text, chat_id, placeholder):
         if text not in ADMIN_ID:
-            send_message(INVALID_PIN, chat_id, name, remove_keyboard())
+            send_message(INVALID_PIN, chat_id, self.name, reply_markup=remove_keyboard())
             return
         else:
-            send_message(SEND_ADMIN_GREETING, chat_id, name, remove_keyboard())
+            send_message(SEND_ADMIN_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
             self.stage = self.send_all
 
     # chat_id is required to match the number of parameters in stage()
-    # Sends a message to all players.
-    def send_all(self, text, chat_id, name):
-        list_of_ids = AM + AM2 + AM3 + AM4
+    # Sends a message to all players if administrator credentials are approved.
+    def send_all(self, text, chat_id, placeholder):
+        list_of_ids = AM + AM2 + AM3 + AM4 + AM6 + AM7 + AM8
         for person_id in list_of_ids:
             owner_data = am_db.get_owner_from_four(person_id)
             recipient_data = owner_data.fetchone()
-            # print(recipient_data)
             if recipient_data is not None:
-                # print(recipient_data[2])
                 am_participants.append(recipient_data[2])
-        # print(len(ono_participants))
         for cid in am_participants:  # gets the telegram chat_id each time
-            keyboard = build_keyboard(KEYBOARD_OPTIONS)
-            send_message("From the Admin:\n" + text, cid, name, keyboard)
+            send_message("From the Admin:\n" + text, cid, self.name)
         return
 
     # Registers a user.
-    # Verifies the user PIN number first, then registers user in ...
-    def register(self, user_pin, chat_id, name):        # text will be the 4 alphanumeric digits
+    # Verifies the user PIN number first, then registers user in the angel mortal database
+    def register(self, user_pin, chat_id, placeholder):
         if user_pin not in AM and user_pin not in AM2 and user_pin not in AM3 and user_pin not in AM4:
-            send_message(INVALID_PIN, chat_id, name, remove_keyboard())
+            send_message(INVALID_PIN, chat_id, self.name, reply_markup=remove_keyboard())
             return
         else:
-            am_db.register(user_pin, chat_id, name)
-            send_message(AM_GREETING, chat_id, name, remove_keyboard())
+            am_db.register(user_pin, chat_id, self.name)
+            send_message(AM_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
             self.stage = self.anonymous_chat
 
     # Initialises a chat with a user's angel or mortal.
-    def anonymous_chat(self, text, chat_id, name):
+    # todo possible to store angel/mortal's id in User object, can reduce complexity due to if statements
+    # todo rename with proper variable names
+    def anonymous_chat(self, text, chat_id, placeholder):
         if text == ANGEL_KEY:
             for x in am_db.get_four_from_owner(chat_id):
                 me = x[1]
@@ -242,48 +255,64 @@ class User:
                 angel = AM[(AM.index(me) - 1)]
             elif me in AM2:
                 angel = AM2[(AM2.index(me) - 1)]
+            elif me in AM3:
+                angel = AM3[(AM3.index(me) - 1)]
             elif me in AM4:
                 angel = AM4[(AM4.index(me) - 1)]
+            elif me in AM5:
+                angel = AM5[(AM5.index(me) - 1)]
+            elif me in AM6:
+                angel = AM6[(AM6.index(me) - 1)]
+            elif me in AM7:
+                angel = AM7[(AM7.index(me) - 1)]
             else:
-                angel = AM3[(AM3.index(me) - 1)]
+                angel = AM8[(AM3.index(me) - 1)]
             for x in am_db.get_owner_from_four(angel):
-                self.angel = x[2]
+                self.angel_id = x[2]
                 break
-            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, name)
+            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, self.name)
             self.stage = self.chat_with_angel
         elif text == MORTAL_KEY:
             for x in am_db.get_four_from_owner(chat_id):
                 me = x[1]
                 break
             if me in AM:
-                mortal = AM[(AM.index(me) + 1)%len(AM)]
+                mortal = AM[(AM.index(me) + 1) % len(AM)]
             elif me in AM2:
-                mortal = AM2[(AM2.index(me) + 1)%len(AM2)]
+                mortal = AM2[(AM2.index(me) + 1) % len(AM2)]
+            elif me in AM3:
+                mortal = AM3[(AM3.index(me) + 1) % len(AM3)]
             elif me in AM4:
-                mortal = AM4[(AM4.index(me) + 1)%len(AM4)]
+                mortal = AM4[(AM4.index(me) - 1) % len(AM4)]
+            elif me in AM5:
+                mortal = AM5[(AM5.index(me) - 1) % len(AM5)]
+            elif me in AM6:
+                mortal = AM6[(AM6.index(me) - 1) % len(AM6)]
+            elif me in AM7:
+                mortal = AM7[(AM7.index(me) - 1) % len(AM7)]
             else:
-                mortal = AM3[(AM3.index(me) + 1)%len(AM3)]
+                mortal = AM8[(AM3.index(me) - 1) % len(AM8)]
             for x in am_db.get_owner_from_four(mortal):
-                self.mortal = x[2]
+                self.mortal_id = x[2]
                 break
-            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, name)
+            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, self.name)
             self.stage = self.chat_with_mortal
 
     # Sends a text message to a user's angel.
-    def chat_with_angel(self, text, chat_id, recipient_name, sender_name):
-        if self.angel != 0:
-            send_message("From your Mortal:\n" + text, self.angel, recipient_name)
-            print("To: {} (angel)\n" + "From: {} (mortal)\n" + "Message: {}\n".format(recipient_name, sender_name, text))
+    def chat_with_angel(self, text, chat_id, recipient_name):
+        if self.angel_id != 0:
+            print("Angel to Mortal:")
+            send_message("From your Mortal:\n" + text, self.angel_id, recipient_name, sender_name=self.name)
         else:
-            send_message(SEND_CONNECTION_FAILED, chat_id, recipient_name)
+            send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
     # Sends a text message to a user's mortal.
-    def chat_with_mortal(self, text, chat_id, recipient_name, sender_name):
-        if self.mortal != 0:
-            send_message("From your Angel:\n" + text, self.mortal, recipient_name)
-            print("To: {} (mortal)\n" + "From: {} (angel)\n" + "Message: {}\n".format(recipient_name, sender_name, text))
+    def chat_with_mortal(self, text, chat_id, recipient_name):
+        if self.mortal_id != 0:
+            print("Mortal to Angel:")
+            send_message("From your Angel:\n" + text, self.mortal_id, recipient_name, sender_name=self.name)
         else:
-            send_message(SEND_CONNECTION_FAILED, chat_id, recipient_name)
+            send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
 
 # Searches existing user list for a registered user and stages the user
@@ -302,7 +331,7 @@ def find_existing_user_then_stage(text, chat_id, name, user_list):
 
 # Initialises a User object, adds it to the global list and the user database
 def setup_user_then_stage(text, chat_id, name, user_list):
-        new_user = User(chat_id)  # create a new User object
+        new_user = User(chat_id, name)  # create a new User object
         user_list.append(new_user)  # add new user to the global user list
         user_db.add_user(chat_id, name)  # add user profile to the db
         if text == MENU_KEY:
