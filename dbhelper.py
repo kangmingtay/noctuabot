@@ -9,7 +9,8 @@ password = url.password
 host = url.hostname
 port = url.port
 
-
+# Used to setup and store user infomation
+#
 class userdb:
     def __init__(self):
         self.connection = psycopg2.connect(
@@ -31,28 +32,6 @@ class userdb:
         args = (owner, name)
         self.cur.execute(stmt, args)
         self.connection.commit()
-
-    def delete_user(self, name):
-        stmt = "DELETE FROM users WHERE name = %s"
-        args = (name, )
-        self.cur.execute(stmt, args)
-        self.connection.commit()
-
-    def get_name(self):
-        stmt = "SELECT * FROM users"
-        try:
-            self.cur.execute(stmt)
-            print("get_name executed")
-            return [x[2] for x in self.cur]
-        except:
-            print("Failure")
-            return []
-
-    def get_id_and_name(self):
-        stmt = "SELECT * FROM users"
-        self.cur.execute(stmt)
-        print("get_id_and_name executed")
-        return self.cur
 
 
 class onodb:
