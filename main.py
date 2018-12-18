@@ -245,8 +245,7 @@ class User:
             for x in am_db.get_owner_from_four(angel):
                 self.angel = x[2]
                 break
-            keyboard = build_keyboard(AM_KEYBOARD_OPTIONS)
-            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, name, keyboard)
+            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, name)
             self.stage = self.angelchat
         elif text == MORTAL_KEY:
             for x in am_db.get_four_from_owner(chat_id):
@@ -268,41 +267,6 @@ class User:
 
 
     def angelchat(self, text, chat_id, name):
-        if text == MORTAL_KEY:
-            for x in am_db.get_four_from_owner(chat_id):
-                me = x[1]
-                break
-            if me in AM:
-                mortal = AM[(AM.index(me) + 1)%len(AM)]
-            elif me in AM2:
-                mortal = AM2[(AM2.index(me) + 1)%len(AM2)]
-            elif me in AM4:
-                mortal = AM4[(AM4.index(me) + 1)%len(AM4)]
-            else:
-                mortal = AM3[(AM3.index(me) + 1)%len(AM3)]
-            for x in am_db.get_owner_from_four(mortal):
-                self.mortal = x[2]
-                break
-            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, name)
-            self.stage = self.mortalchat
-            return
-        elif text == ANGEL_KEY:
-            for x in am_db.get_four_from_owner(chat_id):
-                me = x[1]
-                break
-            if me in AM:
-                angel = AM[(AM.index(me) - 1)]
-            elif me in AM2:
-                angel = AM2[(AM2.index(me) - 1)]
-            elif me in AM4:
-                angel = AM4[(AM4.index(me) - 1)]
-            else:
-                angel = AM3[(AM3.index(me) - 1)]
-            for x in am_db.get_owner_from_four(angel):
-                self.angel = x[2]
-                break
-            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, name)
-            return
         if self.angel != 0:
             send_message("From your Mortal:\n" + text, self.angel, name)
         else:
@@ -310,41 +274,6 @@ class User:
 
 
     def mortalchat(self, text, chat_id, name):
-        if text == ANGEL_KEY:
-            for x in am_db.get_four_from_owner(chat_id):
-                me = x[1]
-                break
-            if me in AM:
-                angel = AM[(AM.index(me) - 1)]
-            elif me in AM2:
-                angel = AM2[(AM2.index(me) - 1)]
-            elif me in AM4:
-                angel = AM4[(AM4.index(me) - 1)]
-            else:
-                angel = AM3[(AM3.index(me) - 1)]
-            for x in am_db.get_owner_from_four(angel):
-                self.angel = x[2]
-                break
-            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, name)
-            self.stage = self.angelchat
-            return
-        elif text == MORTAL_KEY:
-            for x in am_db.get_four_from_owner(chat_id):
-                me = x[1]
-                break
-            if me in AM:
-                mortal = AM[(AM.index(me) + 1)%len(AM)]
-            elif me in AM2:
-                mortal = AM2[(AM2.index(me) + 1)%len(AM2)]
-            elif me in AM4:
-                mortal = AM4[(AM4.index(me) + 1)%len(AM4)]
-            else:
-                mortal = AM3[(AM3.index(me) + 1)%len(AM3)]
-            for x in am_db.get_owner_from_four(mortal):
-                self.mortal = x[2]
-                break
-            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, name)
-            return
         if self.mortal != 0:
             send_message("From your Angel:\n" + text, self.mortal, name)
         else:
