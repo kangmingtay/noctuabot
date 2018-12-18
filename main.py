@@ -46,11 +46,11 @@ AM_GREETING = "Hello there, Anonymous! Click or type any of the following:\n" +\
 AM_LOGIN_GREETING = "Please enter your 4-digit UserID.\n\n" +\
                      "or click /mainmenu to exit the registration process"
 INVALID_PIN = "You have entered the wrong 4-digit number. Please try again, or type /mainmenu to exit."
-REDIRECT_GREETING = "Did you mean: /start"
+REDIRECT_GREETING = "Did you mean: /mainmenu"
 REQUEST_ADMIN_ID = "Please enter your Admin ID to proceed."
 SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?"
 SEND_CONNECTION_FAILED = u"Your message has failed to send, because he/she has yet to sign in to the game." +\
-                         u" Please be patient and try again soon!" + SMILEY
+                         u" Please be patient and try again soon!" + SMILEY + "\n\n Type /mainmenu to go back."
 SUCCESSFUL_ANGEL_CONNECTION = "You have been connected with your Angel." +\
                             " Anything you type here will be sent anonymously to him/her."
 SUCCESSFUL_MORTAL_CONNECTION = "You have been connected with your Mortal." +\
@@ -67,6 +67,7 @@ RULES_KEY = "Game Rules"
 ANGEL_KEY = u"/angel"
 MORTAL_KEY = u"/mortal"
 MENU_KEY = u"/mainmenu"
+ADMIN_KEY = u"/admin"
 AM_KEYBOARD_OPTIONS = [ANGEL_KEY, MORTAL_KEY, MENU_KEY]
 KEYBOARD_OPTIONS = [ANONYMOUS_CHAT_KEY, ABOUT_THE_BOT_KEY, HELP_KEY, RULES_KEY]
 
@@ -154,7 +155,7 @@ class User:
     # Function to open up the main menu with keyboard options.
     def mainmenu(self, text, chat_id, name):
         formatted_hello_greeting = HELLO_GREETING.format(name)
-        if text == "/start" or text == "back" or text == "/mainmenu":
+        if text == MENU_KEY:
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message(formatted_hello_greeting, chat_id, name, keyboard)
 
@@ -171,7 +172,8 @@ class User:
             else:
                 send_message(AM_LOGIN_GREETING, chat_id, name, remove_keyboard())
                 self.stage = self.register
-        elif text == "/admin":
+
+        elif text == ADMIN_KEY:
             send_message(REQUEST_ADMIN_ID, chat_id, name, remove_keyboard())
             self.stage = self.admin_login
 
@@ -284,7 +286,7 @@ class User:
 def find_existing_user_then_stage(text, chat_id, name, user_list):
     for registered_user in user_list:  # in the user list
         if chat_id == registered_user.id:  # if there is an existing user
-            if text == "/start" or text == "/mainmenu":
+            if text == MENU_KEY:
                 registered_user.stage = registered_user.mainmenu
                 registered_user.stage(text, chat_id, name)
             else:
@@ -299,7 +301,7 @@ def setup_user_then_stage(text, chat_id, name, user_list):
         new_user = User(chat_id)  # create a new User object
         user_list.append(new_user)  # add new user to the global user list
         user_db.add_user(chat_id, name)  # add user profile to the db
-        if text == "/mainmenu":
+        if text == MENU_KEY:
             new_user.stage = new_user.mainmenu
             new_user.stage(text, chat_id, name)
         else:
