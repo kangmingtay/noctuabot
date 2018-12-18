@@ -9,6 +9,8 @@ password = url.password
 host = url.hostname
 port = url.port
 
+# todo reset the database
+# todo refactor the names
 # Used to setup and store user information: id, owner number, name.
 # Ensures that the name of the owner is unique
 class userdb:
@@ -57,6 +59,10 @@ class onodb:
     #     self.cur.execute(stmt, args)
     #     self.connection.commit()
 
+    # Item[0] = unique identifier
+    # Item[1] = user chat_id
+    # Item[2] = user name on telegram
+    # Item[3] = isRegistered
     def register(self, four, owner, name):
         stmt = "DELETE FROM ONO WHERE four = %s"
         args = (four, )
@@ -77,6 +83,7 @@ class onodb:
     #     self.cur.execute(stmt, args)
     #     self.connection.commit()
 
+    # Retrieves all database entries, each entry contains 4 values
     def get_four(self):
         stmt = "SELECT * FROM ONO"
         try:
@@ -86,6 +93,7 @@ class onodb:
             print("Failure")
             return []
 
+    # Retrieves the 4 values for an entry which matches a user_id
     def get_four_from_owner(self, owner):
         stmt = "SELECT * FROM ONO WHERE owner = %s"
         args = (owner, )
@@ -96,6 +104,8 @@ class onodb:
             print("Failure")
             return []
 
+    # todo badly named
+    # Retrieves a User's chat id from its unique identifier
     def get_owner_from_four(self, four):
         stmt = "SELECT * FROM ONO WHERE four = %s"
         args = (four, )
