@@ -9,8 +9,8 @@ password = url.password
 host = url.hostname
 port = url.port
 
-# Used to setup and store user infomation
-#
+# Used to setup and store user information: id, owner number, name.
+# Ensures that the name of the owner is unique
 class userdb:
     def __init__(self):
         self.connection = psycopg2.connect(
@@ -23,6 +23,7 @@ class userdb:
         self.cur = self.connection.cursor()
 
     def setup(self):
+        # todo what happens if the user name is non-unique?
         tblstmt = "CREATE TABLE IF NOT EXISTS users (id serial, owner integer, name varchar, CONSTRAINT owner_name UNIQUE (owner, name));"
         self.cur.execute(tblstmt)
         self.connection.commit()
@@ -50,11 +51,11 @@ class onodb:
         self.cur.execute(tblstmt)
         self.connection.commit()
 
-    def start(self, four):
-        stmt = "INSERT INTO ONO (four, owner, name, registered) VALUES (%s, %s, %s, %s)"
-        args = (four, 0, "-", "no")
-        self.cur.execute(stmt, args)
-        self.connection.commit()
+    # def start(self, four):
+    #     stmt = "INSERT INTO ONO (four, owner, name, registered) VALUES (%s, %s, %s, %s)"
+    #     args = (four, 0, "-", "no")
+    #     self.cur.execute(stmt, args)
+    #     self.connection.commit()
 
     def register(self, four, owner, name):
         stmt = "DELETE FROM ONO WHERE four = %s"
@@ -66,15 +67,15 @@ class onodb:
         self.cur.execute(stmt, args)
         self.connection.commit()
 
-    def reset(self, four):
-        stmt = "DELETE FROM ONO WHERE four = %s"
-        args = (four, )
-        self.cur.execute(stmt, args)
-        self.connection.commit()
-        stmt = "INSERT INTO ONO (four, owner, name, registered) VALUES (%s, %s, %s, %s)"
-        args = (four, 0, "-", "no")
-        self.cur.execute(stmt, args)
-        self.connection.commit()
+    # def reset(self, four):
+    #     stmt = "DELETE FROM ONO WHERE four = %s"
+    #     args = (four, )
+    #     self.cur.execute(stmt, args)
+    #     self.connection.commit()
+    #     stmt = "INSERT INTO ONO (four, owner, name, registered) VALUES (%s, %s, %s, %s)"
+    #     args = (four, 0, "-", "no")
+    #     self.cur.execute(stmt, args)
+    #     self.connection.commit()
 
     def get_four(self):
         stmt = "SELECT * FROM ONO"
@@ -105,9 +106,9 @@ class onodb:
             print("Failure")
             return []
 
-    def clear(self):
-        stmt = "DELETE FROM ONO;"
-        self.cur.execute(stmt)
-        self.connection.commit()
+    # def clear(self):
+    #     stmt = "DELETE FROM ONO;"
+    #     self.cur.execute(stmt)
+    #     self.connection.commit()
 
 
