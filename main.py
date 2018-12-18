@@ -11,7 +11,7 @@ BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 # groups based on tolerance level:
 # 8 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5, AM6, AM7, AM8
 # index to the left: ANGEL | index to the right: MORTAL
-AM = ["1234", "9583", "5635"]
+AM = ["1234"]
 AM2 = []
 AM3 = []
 AM4 = []
@@ -22,8 +22,8 @@ ADMIN_ID = os.environ["ADMIN_PASSWORD"]
 
 user_db = userdb()
 am_db = onodb()
-users = [] # list of users objects
-am_participants = [] # list of player chat_ids
+users = []  # list of users objects
+am_participants = []  # list of player chat_ids
 
 # EMOJI UNICODE
 CAKE = u"\U0001F382"
@@ -36,7 +36,7 @@ SPEECH_BUBBLE = u"\U0001F4AC"
 THINKING_FACE = u"\U0001F914"
 
 # GREETINGS
-ABOUT_THE_BOT = SPOUTING_WHALE + " *About OrcaBot* " + SPOUTING_WHALE + "\n\n" + CAKE + " Birthday: June 2017\n\n" + \
+ABOUT_THE_BOT = SPOUTING_WHALE + " *About OrcaBot* " + SPOUTING_WHALE + "\n\n" + CAKE + " Birthday: June 2017\n\n" +\
                 ROBOT + " Currently maintained by Kang Ming + Zhi Yu :)\n\n" + SKULL +\
                 " Past Bot Developers: Bai Chuan, Fiz, Youkuan\n\n"
 AM_GREETING = "Hello there, Anonymous! Click or type any of the following:\n" +\
@@ -50,7 +50,7 @@ REDIRECT_GREETING = "Did you mean: /mainmenu"
 REQUEST_ADMIN_ID = "Please enter your Admin ID to proceed."
 SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?"
 SEND_CONNECTION_FAILED = u"Your message has failed to send, because he/she has yet to sign in to the game." +\
-                         u" Please be patient and try again soon!" + SMILEY + "\n\n Type /mainmenu to go back."
+                         u" Please be patient and try again soon!" + SMILEY + "\n\nType /mainmenu to go back."
 SUCCESSFUL_ANGEL_CONNECTION = "You have been connected with your Angel." +\
                             " Anything you type here will be sent anonymously to him/her."
 SUCCESSFUL_MORTAL_CONNECTION = "You have been connected with your Mortal." +\
@@ -59,15 +59,17 @@ HELLO_GREETING = "Hello there, {}! Oscar at your service! " + SPOUTING_WHALE
 HELP_MESSAGE = "<User guide for bot features>\n\n"
 GAME_RULES_MESSAGE = "<Insert games rules>"
 
-# TELEGRAM KEYBOARD OPTIONS
+# TELEGRAM KEYBOARD KEYS
 ABOUT_THE_BOT_KEY = u"About the Bot" + " " + SPOUTING_WHALE
+ADMIN_KEY = u"/admin"
+ANGEL_KEY = u"/angel"
 ANONYMOUS_CHAT_KEY = u"Angel-Mortal Anonymous Chat" + " " + SPEECH_BUBBLE
 HELP_KEY = "Help" + " " + THINKING_FACE
 RULES_KEY = "Game Rules"
-ANGEL_KEY = u"/angel"
-MORTAL_KEY = u"/mortal"
 MENU_KEY = u"/mainmenu"
-ADMIN_KEY = u"/admin"
+MORTAL_KEY = u"/mortal"
+
+# TELEGRAM KEYBOARD OPTIONS
 AM_KEYBOARD_OPTIONS = [ANGEL_KEY, MORTAL_KEY, MENU_KEY]
 KEYBOARD_OPTIONS = [ANONYMOUS_CHAT_KEY, ABOUT_THE_BOT_KEY, HELP_KEY, RULES_KEY]
 
@@ -230,7 +232,7 @@ class User:
             send_message(AM_GREETING, chat_id, name, remove_keyboard())
             self.stage = self.anonymous_chat
 
-
+    # Initialises a chat with a user's angel or mortal.
     def anonymous_chat(self, text, chat_id, name):
         if text == ANGEL_KEY:
             for x in am_db.get_four_from_owner(chat_id):
@@ -248,7 +250,7 @@ class User:
                 self.angel = x[2]
                 break
             send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, name)
-            self.stage = self.angelchat
+            self.stage = self.chat_with_angel
         elif text == MORTAL_KEY:
             for x in am_db.get_four_from_owner(chat_id):
                 me = x[1]
@@ -265,21 +267,23 @@ class User:
                 self.mortal = x[2]
                 break
             send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, name)
-            self.stage = self.mortalchat
+            self.stage = self.chat_with_mortal
 
-
-    def angelchat(self, text, chat_id, name):
+    # Sends a text message to a user's angel.
+    def chat_with_angel(self, text, chat_id, recipient_name, sender_name):
         if self.angel != 0:
-            send_message("From your Mortal:\n" + text, self.angel, name)
+            send_message("From your Mortal:\n" + text, self.angel, recipient_name)
+            print("To: {} (angel)\n" + "From: {} (mortal)\n" + "Message: {}\n".format(recipient_name, sender_name, text))
         else:
-            send_message(SEND_CONNECTION_FAILED, chat_id, name)
+            send_message(SEND_CONNECTION_FAILED, chat_id, recipient_name)
 
-
-    def mortalchat(self, text, chat_id, name):
+    # Sends a text message to a user's mortal.
+    def chat_with_mortal(self, text, chat_id, recipient_name, sender_name):
         if self.mortal != 0:
-            send_message("From your Angel:\n" + text, self.mortal, name)
+            send_message("From your Angel:\n" + text, self.mortal, recipient_name)
+            print("To: {} (mortal)\n" + "From: {} (angel)\n" + "Message: {}\n".format(recipient_name, sender_name, text))
         else:
-            send_message(SEND_CONNECTION_FAILED, chat_id, name)
+            send_message(SEND_CONNECTION_FAILED, chat_id, recipient_name)
 
 
 # Searches existing user list for a registered user and stages the user
@@ -308,6 +312,7 @@ def setup_user_then_stage(text, chat_id, name, user_list):
             new_user.stage(text, chat_id, name)
 
 
+# Entry point of telegram bot script
 def main():
     last_update_id = None # represents offset to be sent in get_updates
     while True:
