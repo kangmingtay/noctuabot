@@ -263,8 +263,7 @@ class User:
             for x in am_db.get_owner_from_four(mortal):
                 self.mortal = x[2]
                 break
-            keyboard = build_keyboard(AM_KEYBOARD_OPTIONS)
-            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, name, keyboard)
+            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, name)
             self.stage = self.mortalchat
 
 
