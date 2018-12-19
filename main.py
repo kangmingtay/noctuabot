@@ -229,7 +229,7 @@ class User:
             if recipient_data is not None:
                 am_participants.append(recipient_data[2])
         for cid in am_participants:  # gets the telegram chat_id each time
-            send_message("**From the Admin:**\n" + text, cid, self.name)
+            send_message("From the Admin:\n" + text, cid, self.name)
         return
 
     # Registers a user.
@@ -307,7 +307,7 @@ class User:
     def chat_with_angel(self, text, chat_id):
         if self.angel_chat_id != 0:
             print("Angel to Mortal:")
-            send_message("**From your Mortal:**\n\n" + text, self.angel_chat_id, self.angel_name, sender_name=self.name)
+            send_message("From your Mortal:\n\n" + text, self.angel_chat_id, self.angel_name, sender_name=self.name)
         else:
             send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
@@ -315,7 +315,7 @@ class User:
     def chat_with_mortal(self, text, chat_id):
         if self.mortal_chat_id != 0:
             print("Mortal to Angel:")
-            send_message("**From your Angel:**\n\n" + text, self.mortal_chat_id, self.mortal_name, sender_name=self.name)
+            send_message("From your Angel:\n\n" + text, self.mortal_chat_id, self.mortal_name, sender_name=self.name)
         else:
             send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
