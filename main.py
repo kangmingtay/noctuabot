@@ -11,8 +11,8 @@ BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 # groups based on tolerance level, each player is assigned an 8-character unique alphanumeric identifier - game id
 # 8 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5, AM6, AM7, AM8
 # index to the left: ANGEL | index to the right: MORTAL
-AM = ["kangming", "zhiyu", "shaoyi", "chinnfang", "ben"]
-AM2 = ["1234"]
+AM = ["kD7yj3mj", "IOh92V4D", "kXoSZTyc", "VotCq4ot", "K7uzdofB"]
+AM2 = ["kangming", "zhiyu", "ben", "shaoyi", "chinnfang"]
 AM3 = []
 AM4 = []
 AM5 = []
@@ -25,7 +25,7 @@ AM8 = []
 ADMIN_ID = os.environ["ADMIN_PASSWORD"]
 
 user_db = userdb()
-am_db = onodb()
+am_db = amdb()
 users = []  # list of users objects
 am_participants = []  # list of player chat_ids
 
@@ -180,8 +180,8 @@ class User:
             send_message(formatted_hello_greeting, chat_id, self.name, reply_markup=keyboard)
 
         elif text == ANONYMOUS_CHAT_KEY:
-            owners = [x[2] for x in am_db.get_four()]
-            if chat_id in owners:       # ??? if 8 digit alphanumeric ID is in the list
+            chat_ids = [records[2] for records in am_db.get_all_records()]
+            if chat_id in chat_ids:       # ??? if 8 digit alphanumeric ID is in the list
                 send_message(AM_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
                 self.stage = self.anonymous_chat
             else:
@@ -243,13 +243,11 @@ class User:
             send_message(AM_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
             self.stage = self.anonymous_chat
 
-    # rename variables
     # user_record[0] = serial number
     # user_record[1] = unique identifier (game_id)
     # user_record[2] = user chat_id
     # user_record[3] = name on telegram
     # user_record[4] = isRegistered todo change to boolean
-
     # Initialises a chat with a user's angel or mortal.
     def anonymous_chat(self, text, chat_id):
         # returns the cursor that has executed the SQL statement in postgres
