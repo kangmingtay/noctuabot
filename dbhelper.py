@@ -48,6 +48,8 @@ class onodb:
         )
         self.cur = self.connection.cursor()
 
+    # todo need to reset this
+    # Creates a postgresql table if it does not exist.
     def setup(self):
         tblstmt = "CREATE TABLE IF NOT EXISTS ONO (id serial, four varchar, owner integer, name varchar, registered varchar);"
         self.cur.execute(tblstmt)
@@ -59,10 +61,12 @@ class onodb:
     #     self.cur.execute(stmt, args)
     #     self.connection.commit()
 
-    # Item[0] = unique identifier
-    # Item[1] = user chat_id
-    # Item[2] = user name on telegram
-    # Item[3] = isRegistered
+    # rename variables
+    # Item[0] = serial number
+    # Item[1] = unique identifier (game_id)
+    # Item[2] = user chat_id
+    # Item[3] = name on telegram
+    # Item[4] = isRegistered todo change to boolean
     def register(self, four, owner, name):
         stmt = "DELETE FROM ONO WHERE four = %s"
         args = (four, )
@@ -94,7 +98,7 @@ class onodb:
             return []
 
     # Retrieves the 4 values for an entry which matches a user_id
-    def get_four_from_owner(self, owner):
+    def get_user_record_from_user_chat_id(self, owner):
         stmt = "SELECT * FROM ONO WHERE owner = %s"
         args = (owner, )
         try:
@@ -104,11 +108,10 @@ class onodb:
             print("Failure")
             return []
 
-    # todo badly named
-    # Retrieves a User's chat id from its unique identifier
-    def get_owner_from_four(self, four):
+    # Retrieves a User's chat id from its unique 8-character alphanumeric game identifier
+    def get_user_record_from_game_id(self, game_id):
         stmt = "SELECT * FROM ONO WHERE four = %s"
-        args = (four, )
+        args = (game_id,)
         try:
             self.cur.execute(stmt, args)
             return self.cur
