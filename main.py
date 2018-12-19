@@ -47,9 +47,9 @@ AM_GREETING = "Hello there, Anonymous! Click or type any of the following:\n" +\
                "/angel: Chat with your Angel\n" +\
                "/mortal: Chat with your Mortal\n" +\
                "/mainmenu: Exits the Chat feature, and return to the Main Menu"
-AM_LOGIN_GREETING = "Please enter your 4-digit UserID.\n\n" +\
+AM_LOGIN_GREETING = "Please enter your 8-character Game ID.\n\n" +\
                      "or click /mainmenu to exit the registration process"
-INVALID_PIN = "You have entered the wrong 4-digit number. Please try again, or type /mainmenu to exit."
+INVALID_PIN = "You have entered the wrong 8-character Game ID. Please try again, or type /mainmenu to exit."
 REDIRECT_GREETING = "Did you mean: /mainmenu"
 REQUEST_ADMIN_ID = "Please enter your Admin ID to proceed."
 SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?\n" +\

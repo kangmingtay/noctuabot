@@ -24,7 +24,7 @@ class userdb:
 
     def setup(self):
         # todo what happens if the user name is non-unique?
-        tblstmt = "CREATE TABLE IF NOT EXISTS users (id serial, chat_id integer, name varchar, CONSTRAINT owner_name UNIQUE (owner, name));"
+        tblstmt = "CREATE TABLE IF NOT EXISTS users (id serial, owner integer, name varchar, CONSTRAINT owner_name UNIQUE (owner, name));"
         self.cur.execute(tblstmt)
         self.connection.commit()
 
