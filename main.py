@@ -281,6 +281,7 @@ class User:
                 self.stage = self.chat_with_angel
 
         elif text == MORTAL_KEY:
+            # circular list
             if user_game_id in AM:
                 mortal_game_id = AM[(AM.index(user_game_id) + 1) % len(AM)]
             elif user_game_id in AM2:
@@ -325,7 +326,7 @@ class User:
 
 
 # Searches existing user list for a registered user and stages the user
-def find_existing_user_then_stage(text, chat_id, name, user_list):
+def find_existing_user_then_stage(text, chat_id, user_list):
     for registered_user in user_list:  # in the user list
         if chat_id == registered_user.id:  # if there is an existing user
             if text == MENU_KEY:
@@ -367,7 +368,7 @@ def main():
                                 if chat_id not in [user.id for user in users]:  # new user
                                     setup_user_then_stage(text, chat_id, name, users)
                                 else:
-                                    find_existing_user_then_stage(text, chat_id, name, users)
+                                    find_existing_user_then_stage(text, chat_id, users)
                 last_update_id = get_last_update_id(updates) + 1
         except KeyError:
             print("I got a KeyError!")
