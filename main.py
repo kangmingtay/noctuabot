@@ -8,7 +8,7 @@ from dbhelper import * # imports all user-defined functions to
 TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
-# groups based on tolerance level, each player is assigned an 8-character unique alphanumeric identifier
+# groups based on tolerance level, each player is assigned an 8-character unique alphanumeric identifier - game id
 # 8 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5, AM6, AM7, AM8
 # index to the left: ANGEL | index to the right: MORTAL
 AM = ["kangming", "zhiyu", "shaoyi", "chinnfang", "ben"]
@@ -164,11 +164,11 @@ class User:
         self.name = username
         self.angel_name = None
         self.mortal_name = None
-        self.angel_id = 0
-        self.mortal_id = 0
+        self.angel_chat_id = 0
+        self.mortal_chat_id = 0
 
     # Function to open up the main menu with keyboard options.
-    def mainmenu(self, text, chat_id, placeholder):
+    def mainmenu(self, text, chat_id):
         formatted_hello_greeting = HELLO_GREETING.format(self.name)
         if text == MENU_KEY:
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
@@ -206,12 +206,12 @@ class User:
     # A method pointer that is reassigned constantly.
     # Once reassigned to another method with same number of parameters, then the next user input will be directed
     # to the newly reassigned method.
-    def stage(self, text, chat_id, placeholder):
-        self.mainmenu(text, chat_id, placeholder)
+    def stage(self, text, chat_id):
+        self.mainmenu(text, chat_id)
 
     # Prompts the user for the admin password for login.
     # If valid password, then then admin is allowed to send a message to all users.
-    def admin_login(self, text, chat_id, placeholder):
+    def admin_login(self, text, chat_id):
         if text not in ADMIN_ID:
             send_message(INVALID_PIN, chat_id, self.name, reply_markup=remove_keyboard())
             return
@@ -221,20 +221,20 @@ class User:
 
     # chat_id is required to match the number of parameters in stage()
     # Sends a message to all players if administrator credentials are approved.
-    def send_all(self, text, chat_id, placeholder):
+    def send_all(self, text, chat_id):
         list_of_ids = AM + AM2 + AM3 + AM4 + AM6 + AM7 + AM8
         for person_id in list_of_ids:
-            owner_data = am_db.get_owner_from_four(person_id)
+            owner_data = am_db.get_user_record_from_game_id(person_id)
             recipient_data = owner_data.fetchone()
             if recipient_data is not None:
                 am_participants.append(recipient_data[2])
         for cid in am_participants:  # gets the telegram chat_id each time
-            send_message("From the Admin:\n" + text, cid, self.name)
+            send_message("**From the Admin:**\n" + text, cid, self.name)
         return
 
     # Registers a user.
     # Verifies the user PIN number first, then registers user in the angel mortal database
-    def register(self, user_pin, chat_id, placeholder):
+    def register(self, user_pin, chat_id):
         if user_pin not in AM and user_pin not in AM2 and user_pin not in AM3 and user_pin not in AM4:
             send_message(INVALID_PIN, chat_id, self.name, reply_markup=remove_keyboard())
             return
@@ -243,74 +243,79 @@ class User:
             send_message(AM_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
             self.stage = self.anonymous_chat
 
+    # rename variables
+    # user_record[0] = serial number
+    # user_record[1] = unique identifier (game_id)
+    # user_record[2] = user chat_id
+    # user_record[3] = name on telegram
+    # user_record[4] = isRegistered todo change to boolean
+
     # Initialises a chat with a user's angel or mortal.
-    # todo possible to store angel/mortal's id in User object, can reduce complexity due to if statements
-    # todo rename with proper variable names
-    def anonymous_chat(self, text, chat_id, placeholder):
+    def anonymous_chat(self, text, chat_id):
+        # returns the cursor that has executed the SQL statement in postgres
+        user_record = am_db.get_user_record_from_user_chat_id(chat_id).fetchone()
+        user_game_id = user_record[1]
         if text == ANGEL_KEY:
-            for x in am_db.get_four_from_owner(chat_id):
-                me = x[1]
-                break
-            if me in AM:
-                angel = AM[(AM.index(me) - 1)]
-            elif me in AM2:
-                angel = AM2[(AM2.index(me) - 1)]
-            elif me in AM3:
-                angel = AM3[(AM3.index(me) - 1)]
-            elif me in AM4:
-                angel = AM4[(AM4.index(me) - 1)]
-            elif me in AM5:
-                angel = AM5[(AM5.index(me) - 1)]
-            elif me in AM6:
-                angel = AM6[(AM6.index(me) - 1)]
-            elif me in AM7:
-                angel = AM7[(AM7.index(me) - 1)]
+            if user_game_id in AM:
+                angel_game_id = AM[(AM.index(user_game_id) - 1)]
+            elif user_game_id in AM2:
+                angel_game_id = AM2[(AM2.index(user_game_id) - 1)]
+            elif user_game_id in AM3:
+                angel_game_id = AM3[(AM3.index(user_game_id) - 1)]
+            elif user_game_id in AM4:
+                angel_game_id = AM4[(AM4.index(user_game_id) - 1)]
+            elif user_game_id in AM5:
+                angel_game_id = AM5[(AM5.index(user_game_id) - 1)]
+            elif user_game_id in AM6:
+                angel_game_id = AM6[(AM6.index(user_game_id) - 1)]
+            elif user_game_id in AM7:
+                angel_game_id = AM7[(AM7.index(user_game_id) - 1)]
             else:
-                angel = AM8[(AM3.index(me) - 1)]
-            for x in am_db.get_owner_from_four(angel):
-                self.angel_id = x[2]
-                break
+                angel_game_id = AM8[(AM3.index(user_game_id) - 1)]
+
+            angel_record = am_db.get_user_record_from_game_id(angel_game_id).fetchone()
+            self.angel_chat_id = angel_record[2]
+            self.mortal_name = angel_record[3]
             send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, self.name)
             self.stage = self.chat_with_angel
+
         elif text == MORTAL_KEY:
-            for x in am_db.get_four_from_owner(chat_id):
-                me = x[1]
-                break
-            if me in AM:
-                mortal = AM[(AM.index(me) + 1) % len(AM)]
-            elif me in AM2:
-                mortal = AM2[(AM2.index(me) + 1) % len(AM2)]
-            elif me in AM3:
-                mortal = AM3[(AM3.index(me) + 1) % len(AM3)]
-            elif me in AM4:
-                mortal = AM4[(AM4.index(me) - 1) % len(AM4)]
-            elif me in AM5:
-                mortal = AM5[(AM5.index(me) - 1) % len(AM5)]
-            elif me in AM6:
-                mortal = AM6[(AM6.index(me) - 1) % len(AM6)]
-            elif me in AM7:
-                mortal = AM7[(AM7.index(me) - 1) % len(AM7)]
+            if user_game_id in AM:
+                mortal_game_id = AM[(AM.index(user_game_id) + 1) % len(AM)]
+            elif user_game_id in AM2:
+                mortal_game_id = AM2[(AM2.index(user_game_id) + 1) % len(AM2)]
+            elif user_game_id in AM3:
+                mortal_game_id = AM3[(AM3.index(user_game_id) + 1) % len(AM3)]
+            elif user_game_id in AM4:
+                mortal_game_id = AM4[(AM4.index(user_game_id) + 1) % len(AM4)]
+            elif user_game_id in AM5:
+                mortal_game_id = AM5[(AM5.index(user_game_id) + 1) % len(AM5)]
+            elif user_game_id in AM6:
+                mortal_game_id = AM6[(AM6.index(user_game_id) + 1) % len(AM6)]
+            elif user_game_id in AM7:
+                mortal_game_id = AM7[(AM7.index(user_game_id) + 1) % len(AM7)]
             else:
-                mortal = AM8[(AM3.index(me) - 1) % len(AM8)]
-            for x in am_db.get_owner_from_four(mortal):
-                self.mortal_id = x[2]
-                break
+                mortal_game_id = AM8[(AM3.index(user_game_id) + 1) % len(AM8)]
+
+            mortal_record = am_db.get_user_record_from_game_id(mortal_game_id).fetchone()
+            self.mortal_chat_id = mortal_record[2]
+            self.mortal_name = mortal_record[3]
             send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, self.name)
             self.stage = self.chat_with_mortal
 
     # Sends a text message to a user's angel.
-    def chat_with_angel(self, text, chat_id, recipient_name):
-        if self.angel_id != 0:
+    def chat_with_angel(self, text, chat_id):
+        if self.angel_chat_id != 0:
             print("Angel to Mortal:")
-            send_message("From your Mortal:\n" + text, self.angel_id, recipient_name, sender_name=self.name)
+            send_message("**From your Mortal:**\n\n" + text, self.angel_chat_id, self.angel_name, sender_name=self.name)
         else:
             send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
     # Sends a text message to a user's mortal.
-    def chat_with_mortal(self, text, chat_id, recipient_name):
-        if self.mortal_id != 0:
+    def chat_with_mortal(self, text, chat_id):
+        if self.mortal_chat_id != 0:
             print("Mortal to Angel:")
-            send_message("From your Angel:\n" + text, self.mortal_id, recipient_name, sender_name=self.name)
+            send_message("**From your Angel:**\n\n" + text, self.mortal_chat_id, self.mortal_name, sender_name=self.name)
         else:
             send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
@@ -321,9 +326,9 @@ def find_existing_user_then_stage(text, chat_id, name, user_list):
         if chat_id == registered_user.id:  # if there is an existing user
             if text == MENU_KEY:
                 registered_user.stage = registered_user.mainmenu
-                registered_user.stage(text, chat_id, name)
+                registered_user.stage(text, chat_id)
             else:
-                registered_user.stage(text, chat_id, name)
+                registered_user.stage(text, chat_id)
             break
         else:
             continue
@@ -336,9 +341,9 @@ def setup_user_then_stage(text, chat_id, name, user_list):
         user_db.add_user(chat_id, name)  # add user profile to the db
         if text == MENU_KEY:
             new_user.stage = new_user.mainmenu
-            new_user.stage(text, chat_id, name)
+            new_user.stage(text, chat_id)
         else:
-            new_user.stage(text, chat_id, name)
+            new_user.stage(text, chat_id)
 
 
 # Entry point of telegram bot script
