@@ -55,7 +55,7 @@ REQUEST_ADMIN_ID = "Please enter your Admin ID to proceed."
 SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?\n" +\
                       "Whatever you submit from now on will be broadcasted to all users, be CAREFUL!" +\
                       "Type /mainmenu to exit, once you have made your announcement."
-SEND_CONNECTION_FAILED = u"Your message has failed to send, because he/she has yet to sign in to the game." +\
+SEND_CONNECTION_FAILED = u"This feature is unavailable now as he/she has yet to sign in to the game." +\
                          u" Please be patient and try again soon!" + SMILEY + "\n\nType /mainmenu to go back."
 SUCCESSFUL_ANGEL_CONNECTION = "You have been connected with your Angel." +\
                             " Anything you type here will be sent anonymously to him/her.\n" +\
@@ -272,10 +272,13 @@ class User:
                 angel_game_id = AM8[(AM3.index(user_game_id) - 1)]
 
             angel_record = am_db.get_user_record_from_game_id(angel_game_id).fetchone()
-            self.angel_chat_id = angel_record[2]
-            self.mortal_name = angel_record[3]
-            send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, self.name)
-            self.stage = self.chat_with_angel
+            if angel_record is None:
+                send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
+            else:
+                self.angel_chat_id = angel_record[2]
+                self.mortal_name = angel_record[3]
+                send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, self.name)
+                self.stage = self.chat_with_angel
 
         elif text == MORTAL_KEY:
             if user_game_id in AM:
@@ -296,10 +299,13 @@ class User:
                 mortal_game_id = AM8[(AM3.index(user_game_id) + 1) % len(AM8)]
 
             mortal_record = am_db.get_user_record_from_game_id(mortal_game_id).fetchone()
-            self.mortal_chat_id = mortal_record[2]
-            self.mortal_name = mortal_record[3]
-            send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, self.name)
-            self.stage = self.chat_with_mortal
+            if mortal_record is None:
+                send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
+            else:
+                self.mortal_chat_id = mortal_record[2]
+                self.mortal_name = mortal_record[3]
+                send_message(SUCCESSFUL_MORTAL_CONNECTION, chat_id, self.name)
+                self.stage = self.chat_with_mortal
 
     # Sends a text message to a user's angel.
     def chat_with_angel(self, text, chat_id):
