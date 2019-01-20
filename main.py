@@ -407,7 +407,7 @@ class User:
             elif user_game_id in AM5:
                 mortal_game_id = AM5[(AM5.index(user_game_id) + 1) % len(AM5)]
             elif user_game_id in COMM:
-                angel_game_id = COMM[(COMM.index(user_game_id) - 1)]
+                mortal_game_id = COMM[(COMM.index(user_game_id) - 1)]
             elif user_game_id in ADMINS:
                 mortal_game_id = ADMINS[(ADMINS.index(user_game_id) + 1) % len(ADMINS)]
 
@@ -422,19 +422,25 @@ class User:
 
     # Sends a text message to a user's angel.
     def chat_with_angel(self, text, chat_id):
-        if self.angel_chat_id != 0:
-            print("Angel to Mortal:")
-            send_message("From your Mortal:\n\n" + text, self.angel_chat_id, self.angel_name, sender_name=self.name)
+        if text == MORTAL_KEY or text == ANGEL_KEY:
+            self.anonymous_chat(text, chat_id)
         else:
-            send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
+            if self.angel_chat_id != 0:
+                print("Angel to Mortal:")
+                send_message("From your Mortal:\n\n" + text, self.angel_chat_id, self.angel_name, sender_name=self.name)
+            else:
+                send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
     # Sends a text message to a user's mortal.
     def chat_with_mortal(self, text, chat_id):
-        if self.mortal_chat_id != 0:
-            print("Mortal to Angel:")
-            send_message("From your Angel:\n\n" + text, self.mortal_chat_id, self.mortal_name, sender_name=self.name)
+        if text == MORTAL_KEY or text == ANGEL_KEY:
+            self.anonymous_chat(text, chat_id)
         else:
-            send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
+            if self.mortal_chat_id != 0:
+                print("Mortal to Angel:")
+                send_message("From your Angel:\n\n" + text, self.mortal_chat_id, self.mortal_name, sender_name=self.name)
+            else:
+                send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
 
 # Searches existing user list for a registered user and stages the user
