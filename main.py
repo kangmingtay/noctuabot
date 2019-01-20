@@ -61,7 +61,7 @@ ADMIN_KEYBOARD = [SEND_ALL_KEY, SEND_ONE_KEY, CHECK_REGIS_KEY]
 
 # GREETINGS
 ABOUT_THE_BOT = SPOUTING_WHALE + " *About OrcaBot* " + SPOUTING_WHALE + "\n\n" + CAKE + " Birthday: June 2017\n\n" +\
-                ROBOT + " Currently maintained by Shao Yi, Benjamin Chan, Chinn Fang\n\n" + SKULL +\
+                ROBOT + " Currently maintained by Shao Yi\n\n" + SKULL +\
                 " Past Bot Developers: Bai Chuan, Fiz, Youkuan, Kang Ming, Zhi Yu\n\n"
 AM_GREETING = "Hello there, {}!\n\n" +\
               "Click or type any of the following:\n" +\
@@ -74,7 +74,7 @@ INVALID_PIN = "You have entered the wrong 8-character Game ID. Please try again,
 REDIRECT_GREETING = "Did you mean: /mainmenu"
 REQUEST_ADMIN_ID = "Please enter your Admin ID to proceed."
 SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?\n" +\
-                      "Whatever you submit from now on will be broadcasted to all users, be CAREFUL!" +\
+                      "Whatever you submit from now on will be broadcasted to all users, be CAREFUL! " +\
                       "Type /mainmenu to exit, once you have made your announcement."
 SEND_CONNECTION_FAILED = u"This feature is unavailable now as he/she has yet to sign in to the game. " +\
                          u"Please be patient and try again soon! " + SMILEY + "\n\nType /mainmenu to go back."
