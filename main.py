@@ -390,7 +390,7 @@ class User:
                 send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
             else:
                 self.angel_chat_id = angel_record[2]
-                self.mortal_name = angel_record[3]
+                self.angel_name = angel_record[3]
                 send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, self.name)
                 self.stage = self.chat_with_angel
 
