@@ -100,9 +100,9 @@ HELP_MESSAGE = "Hello there, {}!\n\n" +\
                "Thank you and we hope you'll have fun throughout this game! :)"
 GAME_RULES_MESSAGE = "How Discovering True Friends work\n\n" +\
                      "Each of you who participated will be assigned an Angel and a Mortal. " +\
-                     "Of course, you will know the identity of your Mortal while your angel’s identity will be kept" +\
-                     "from you. Throughout the course of the event, feel free to chat with both your angel and mortal" +\
-                     "through OrcaBot where your identity will be kept secret, and take care of your mortal with" +\
+                     "Of course, you will know the identity of your Mortal while your angel’s identity will be kept " +\
+                     "from you. Throughout the course of the event, feel free to chat with both your angel and mortal " +\
+                     "through OrcaBot where your identity will be kept secret, and take care of your mortal with " +\
                      "anonymous gift and pranks according to their indicated tolerance levels! " +\
                      "Of course, you can look forward to seeing what your own angel does for you as well!\n\n" +\
                      "Explanation for tolerance levels\n\n" +\
