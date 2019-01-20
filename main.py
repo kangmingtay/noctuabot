@@ -12,10 +12,10 @@ BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 # 5 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5
 # index to the left: ANGEL | index to the right: MORTAL
 AM1 = ["2469e777", "4bfe174e", "c31ad821", "0d0402ad", "4031a328", "7030f195", "235db8f9", "e20d9a3b", "bcb546b8", "4d26a6e0"]
-AM2 = ["7630ec6e", "bd36fa27", "70e325e6", "475c1a0c", "beab4f83", "9a9b37ca", "bba9acf7", "c6f777a9", "4ca45749", "bc18cefb", "5f989dfd", "f05d7ae3"]
-AM3 = ["44093d0f", "f75d211f", "a540c572", "e66c584e", "9fdfcc40", "a21bb4f4", "60a1af8c", "13dc9f7e", "8f56b4e2", "850869b3", "837987f5", "13f3e218", "c0b500cf", "23bb473f", "072469f6", "3474eeba", "2dba26c9", "30bfedd5", "d4813f65", "171f1245", "b8217aa3"]
-AM4 = ["558a51bb", "1cd76140", "ac7c1bdf", "6fafdfec", "c13b42d4", "12aa3ba4", "dccd43a8", "6acc29e2", "bc31fbf3"]
-AM5 = ['17b5dff2', 'e18dc804', '5b348a3d', '8f136570', '3a208216', 'e494b3bf', 'b2921a60', '373ae637', '35a5c3a8', 'ba744d0e', 'cf178cbe', 'ccdad553', 'd4c9e7c0']
+AM2 = ["7630ec6e", "bd36fa27", "70e325e6", "475c1a0c", "beab4f83", "9a9b37ca", "bba9acf7", "c6f777a9", "4ca45749", "bc18cefb", "5f989dfd", "f05d7ae3", "bbe66113"]
+AM3 = ["44093d0f", "f75d211f", "a540c572", "e66c584e", "9fdfcc40", "a21bb4f4", "60a1af8c", "13dc9f7e", "8f56b4e2", "850869b3", "837987f5", "13f3e218", "c0b500cf", "23bb473f", "072469f6", "3474eeba", "2dba26c9", "30bfedd5", "d4813f65", "171f1245", "b8217aa3", "7e7fd5e3"]
+AM4 = ["558a51bb", "1cd76140", "ac7c1bdf", "6fafdfec", "c13b42d4", "12aa3ba4", "dccd43a8", "6acc29e2", "bc31fbf3", "229ffa47", "433ac408"]
+AM5 = ['17b5dff2', 'e18dc804', '5b348a3d', '8f136570', '3a208216', 'e494b3bf', 'b2921a60', '373ae637', '35a5c3a8', 'ba744d0e', 'cf178cbe', 'ccdad553', 'd4c9e7c0', '68f9ad5c']
 COMM = ['51002608', '8a262d50', '18d57440', 'd41278ed', 'd3d70e7d', '3b25e1bf', '7a4ccf82', '69c3a8e2', '4c188661', '2d9395b6']
 ADMINS = ["kangming", "zhiyu", "ben", "shaoyi", "chinnfang"]
 
@@ -340,6 +340,7 @@ class User:
                 if recipient_data is None:
                     unregistered_players = unregistered_players + id + '\n'
             send_message(unregistered_players, chat_id, self.name)
+            self.stage = self.admin_stage
         elif text == 'N':
             self.stage = self.mainmenu
         else:
