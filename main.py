@@ -9,15 +9,16 @@ TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 
 # groups based on tolerance level, each player is assigned an 8-character unique alphanumeric identifier - game id
-# 5 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5
+# 8 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5, AM6, AM7, AM8
 # index to the left: ANGEL | index to the right: MORTAL
-AM1 = ["2469e777", "4bfe174e", "c31ad821", "0d0402ad", "4031a328", "7030f195", "235db8f9", "e20d9a3b", "bcb546b8", "4d26a6e0"]
-AM2 = ["7630ec6e", "bd36fa27", "70e325e6", "475c1a0c", "beab4f83", "9a9b37ca", "bba9acf7", "c6f777a9", "4ca45749", "bc18cefb", "5f989dfd", "f05d7ae3", "bbe66113"]
-AM3 = ["44093d0f", "f75d211f", "a540c572", "e66c584e", "9fdfcc40", "a21bb4f4", "60a1af8c", "13dc9f7e", "8f56b4e2", "850869b3", "837987f5", "13f3e218", "c0b500cf", "23bb473f", "072469f6", "3474eeba", "2dba26c9", "30bfedd5", "d4813f65", "171f1245", "b8217aa3", "7e7fd5e3"]
-AM4 = ["558a51bb", "1cd76140", "ac7c1bdf", "6fafdfec", "c13b42d4", "12aa3ba4", "dccd43a8", "6acc29e2", "bc31fbf3", "229ffa47", "433ac408"]
-AM5 = ['17b5dff2', 'e18dc804', '5b348a3d', '8f136570', '3a208216', 'e494b3bf', 'b2921a60', '373ae637', '35a5c3a8', 'ba744d0e', 'cf178cbe', 'ccdad553', 'd4c9e7c0', '68f9ad5c']
-COMM = ['51002608', '8a262d50', '18d57440', 'd41278ed', 'd3d70e7d', '3b25e1bf', '7a4ccf82', '69c3a8e2', '4c188661', '2d9395b6']
-ADMINS = ["kangming", "zhiyu", "ben", "shaoyi", "chinnfang"]
+AM = []
+AM2 = []
+AM3 = []
+AM4 = []
+AM5 = []
+AM6 = []
+AM7 = []
+AM8 = []
 
 
 # Using the admin id would allow you to send messages to everyone
@@ -27,7 +28,6 @@ user_db = userdb()
 am_db = amdb()
 users = []  # list of users objects
 am_participants = []  # list of player chat_ids
-send_one_game_id = ""
 
 # EMOJI UNICODE
 CAKE = u"\U0001F382"
@@ -68,16 +68,17 @@ AM_GREETING = "Hello there, {}!\n\n" +\
               "/angel: Chat with your Angel\n" +\
               "/mortal: Chat with your Mortal\n" +\
               "/mainmenu: Exits the Chat feature, and returns to the Main Menu"
+
 AM_LOGIN_GREETING = "Please enter your 8-character Game ID.\n\n" +\
                      "or click /mainmenu to exit the registration process"
 INVALID_PIN = "You have entered the wrong 8-character Game ID. Please try again, or type /mainmenu to exit."
 REDIRECT_GREETING = "Did you mean: /mainmenu"
 REQUEST_ADMIN_ID = "Please enter your Admin ID to proceed."
 SEND_ADMIN_GREETING = "Hello there, Administrator! What do you want to say to everyone?\n" +\
-                      "Whatever you submit from now on will be broadcasted to all users, be CAREFUL! " +\
+                      "Whatever you submit from now on will be broadcasted to all users, be CAREFUL!" +\
                       "Type /mainmenu to exit, once you have made your announcement."
-SEND_CONNECTION_FAILED = u"This feature is unavailable now as he/she has yet to sign in to the game. " +\
-                         u"Please be patient and try again soon! " + SMILEY + "\n\nType /mainmenu to go back."
+SEND_CONNECTION_FAILED = u"This feature is unavailable now as he/she has yet to sign in to the game." +\
+                         u" Please be patient and try again soon!" + SMILEY + "\n\nType /mainmenu to go back."
 SUCCESSFUL_ANGEL_CONNECTION = "You have been connected with your Angel." +\
                             " Anything you type here will be sent anonymously to him/her.\n" +\
                             "To exit, type /mainmenu"
@@ -132,6 +133,24 @@ GAME_RULES_MESSAGE = "How Discovering True Friends work\n\n" +\
                      "Best regards,\n" +\
                      "Your Organizing Committee"
 
+# HELP_MESSAGE = "<User guide for bot features>\n\n"
+# GAME_RULES_MESSAGE = "<Insert games rules>"
+
+# # TELEGRAM KEYBOARD KEYS
+# ABOUT_THE_BOT_KEY = u"About the Bot" + " " + SPOUTING_WHALE
+# ADMIN_KEY = u"/admin"
+# ANGEL_KEY = u"/angel"
+# ANONYMOUS_CHAT_KEY = u"Angel-Mortal Anonymous Chat" + " " + SPEECH_BUBBLE
+# HELP_KEY = u"/help"
+# RULES_KEY = u"/rules"
+# MENU_KEY = u"/mainmenu"
+# MORTAL_KEY = u"/mortal"
+
+# # TELEGRAM KEYBOARD OPTIONS
+# AM_KEYBOARD_OPTIONS = [ANGEL_KEY, MORTAL_KEY, MENU_KEY]
+# KEYBOARD_OPTIONS = [ANONYMOUS_CHAT_KEY, ABOUT_THE_BOT_KEY, HELP_KEY, RULES_KEY]
+
+
 
 # Sends a HTTP GET request using the given url.
 # Returns the response in utf8 format
@@ -170,8 +189,11 @@ def get_last_update_id(updates):
 # Gets the text and chat id of the last update
 # Returns a tuple containing the text and chat id of the last update
 def get_last_chat_id_and_text(updates):
-    text = updates["result"][-1]["message"]["text"]
-    chat_id = updates["result"][-1]["message"]["chat"]["id"]
+    num_updates = len(updates["result"])
+    last_update = num_updates - 1
+    text = updates["result"][last_update]["message"]["text"]
+    chat_id = updates["result"][last_update]["message"]["chat"]["id"]
+
     return text, chat_id
 
 
@@ -219,37 +241,21 @@ class User:
     # Function to open up the main menu with keyboard options.
     def mainmenu(self, text, chat_id):
         formatted_hello_greeting = HELLO_GREETING.format(self.name)
-
-        def chat_id_recorded(chat_id):
-            chat_ids = [records[2] for records in am_db.get_all_records()]
-            return chat_id in chat_ids
-
         if text == MENU_KEY:
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message(formatted_hello_greeting, chat_id, self.name, reply_markup=keyboard)
 
         elif text == ABOUT_THE_BOT_KEY:
+
+            send_message(ABOUT_THE_BOT, chat_id, self.name)
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
-            send_message(ABOUT_THE_BOT, chat_id, self.name, reply_markup=keyboard)
+            send_message(formatted_hello_greeting, chat_id, self.name, reply_markup=keyboard)
 
         elif text == ANONYMOUS_CHAT_KEY:
-            if chat_id_recorded(chat_id):
-                send_message(AM_GREETING.format(self.name), chat_id, self.name, reply_markup=remove_keyboard())
+            chat_ids = [records[2] for records in am_db.get_all_records()]
+            if chat_id in chat_ids:       # ??? if 8 digit alphanumeric ID is in the list
+                send_message(AM_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
                 self.stage = self.anonymous_chat
-            else:
-                send_message(AM_LOGIN_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
-                self.stage = self.register
-
-        elif text == ANGEL_KEY:
-            if chat_id_recorded(chat_id):
-                self.anonymous_chat(text, chat_id)
-            else:
-                send_message(AM_LOGIN_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
-                self.stage = self.register
-
-        elif text == MORTAL_KEY:
-            if chat_id_recorded(chat_id):
-                self.anonymous_chat(text, chat_id)
             else:
                 send_message(AM_LOGIN_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
                 self.stage = self.register
@@ -259,12 +265,10 @@ class User:
             self.stage = self.admin_login
 
         elif text == HELP_KEY:
-            keyboard = build_keyboard(KEYBOARD_OPTIONS)
-            send_message(HELP_MESSAGE.format(self.name), chat_id, self.name, reply_markup=keyboard)
+            send_message(HELP_MESSAGE, chat_id, self.name, reply_markup=remove_keyboard())
 
         elif text == RULES_KEY:
-            keyboard = build_keyboard(KEYBOARD_OPTIONS)
-            send_message(GAME_RULES_MESSAGE, chat_id, self.name, reply_markup=keyboard)
+            send_message(GAME_RULES_MESSAGE, chat_id, self.name, reply_markup=remove_keyboard())
 
         # Reopen main menu if no keywords match.
         else:
@@ -284,13 +288,7 @@ class User:
             send_message(INVALID_PIN, chat_id, self.name, reply_markup=remove_keyboard())
             return
         else:
-            keyboard = build_keyboard(ADMIN_KEYBOARD)
-            send_message(SEND_ADMIN_GREETING, chat_id, self.name, reply_markup=keyboard)
-            self.stage = self.admin_stage
-
-    def admin_stage(self, text, chat_id):
-        if text == SEND_ALL_KEY:
-            send_message(SEND_ADMIN_GREETING, chat_id, self.name)
+            send_message(SEND_ADMIN_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
             self.stage = self.send_all
         elif text == SEND_ONE_KEY:
             send_message("Please key in the Game ID of the participant", chat_id, self.name)
@@ -314,44 +312,23 @@ class User:
             self.fetch_then_send(text, game_id)
         return
 
-    def receive_game_id(self, text, chat_id):
-        list_of_ids = AM1 + AM2 + AM3 + AM4 + AM5 + COMM + ADMINS
-        if text in list_of_ids:
-            send_message("Please key in the message to be sent to this participant", chat_id, self.name)
-            global send_one_game_id
-            send_one_game_id = text
-            self.stage = self.send_one
-        else:
-            send_message("Invalid Game ID. Please try again.", chat_id, self.name)
-            self.stage = self.receive_game_id
+    # chat_id is required to match the number of parameters in stage()
+    # Sends a message to all players if administrator credentials are approved.
+    def send_all(self, text, chat_id):
+        list_of_ids = AM + AM2 + AM3 + AM4 + AM6 + AM7 + AM8
+        for person_id in list_of_ids:
+            owner_data = am_db.get_user_record_from_game_id(person_id)
+            recipient_data = owner_data.fetchone()
+            if recipient_data is not None:
+                am_participants.append(recipient_data[2])
+        for cid in am_participants:  # gets the telegram chat_id each time
+            send_message("From the Admin:\n" + text, cid, self.name)
         return
-
-    def send_one(self, text, chat_id):
-        self.fetch_then_send(text, send_one_game_id)
-        return
-
-    def check_registration(self, text, chat_id):
-        if text == 'Y':
-            list_of_ids = AM1 + AM2 + AM3 + AM4 + AM5 + COMM + ADMINS
-            unregistered_players = "Unregistered Players' Game IDs:\n\n"
-            for id in list_of_ids:
-                owner_data = am_db.get_user_record_from_game_id(id)
-                recipient_data = owner_data.fetchone()
-                if recipient_data is None:
-                    unregistered_players = unregistered_players + id + '\n'
-            send_message(unregistered_players, chat_id, self.name)
-            self.stage = self.admin_stage
-        elif text == 'N':
-            self.stage = self.mainmenu
-        else:
-            send_message("Invalid response. Please try again.", chat_id, self.name)
-            self.stage = self.check_registration
 
     # Registers a user.
     # Verifies the user PIN number first, then registers user in the angel mortal database
     def register(self, user_pin, chat_id):
-        if user_pin not in AM1 and user_pin not in AM2 and user_pin not in AM3 \
-                and user_pin not in AM4 and user_pin not in AM5 and user_pin not in COMM and user_pin not in ADMINS:
+        if user_pin not in AM and user_pin not in AM2 and user_pin not in AM3 and user_pin not in AM4:
             send_message(INVALID_PIN, chat_id, self.name, reply_markup=remove_keyboard())
             return
         else:
@@ -370,8 +347,8 @@ class User:
         user_record = am_db.get_user_record_from_user_chat_id(chat_id).fetchone()
         user_game_id = user_record[1]
         if text == ANGEL_KEY:
-            if user_game_id in AM1:
-                angel_game_id = AM1[(AM1.index(user_game_id) - 1)]
+            if user_game_id in AM:
+                angel_game_id = AM[(AM.index(user_game_id) - 1)]
             elif user_game_id in AM2:
                 angel_game_id = AM2[(AM2.index(user_game_id) - 1)]
             elif user_game_id in AM3:
@@ -380,24 +357,26 @@ class User:
                 angel_game_id = AM4[(AM4.index(user_game_id) - 1)]
             elif user_game_id in AM5:
                 angel_game_id = AM5[(AM5.index(user_game_id) - 1)]
-            elif user_game_id in COMM:
-                angel_game_id = COMM[(COMM.index(user_game_id) - 1)]
-            elif user_game_id in ADMINS:
-                angel_game_id = ADMINS[(ADMINS.index(user_game_id) - 1)]
+            elif user_game_id in AM6:
+                angel_game_id = AM6[(AM6.index(user_game_id) - 1)]
+            elif user_game_id in AM7:
+                angel_game_id = AM7[(AM7.index(user_game_id) - 1)]
+            else:
+                angel_game_id = AM8[(AM3.index(user_game_id) - 1)]
 
             angel_record = am_db.get_user_record_from_game_id(angel_game_id).fetchone()
             if angel_record is None:
                 send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
             else:
                 self.angel_chat_id = angel_record[2]
-                self.angel_name = angel_record[3]
+                self.mortal_name = angel_record[3]
                 send_message(SUCCESSFUL_ANGEL_CONNECTION, chat_id, self.name)
                 self.stage = self.chat_with_angel
 
         elif text == MORTAL_KEY:
             # circular list
-            if user_game_id in AM1:
-                mortal_game_id = AM1[(AM1.index(user_game_id) + 1) % len(AM1)]
+            if user_game_id in AM:
+                mortal_game_id = AM[(AM.index(user_game_id) + 1) % len(AM)]
             elif user_game_id in AM2:
                 mortal_game_id = AM2[(AM2.index(user_game_id) + 1) % len(AM2)]
             elif user_game_id in AM3:
@@ -406,10 +385,12 @@ class User:
                 mortal_game_id = AM4[(AM4.index(user_game_id) + 1) % len(AM4)]
             elif user_game_id in AM5:
                 mortal_game_id = AM5[(AM5.index(user_game_id) + 1) % len(AM5)]
-            elif user_game_id in COMM:
-                mortal_game_id = COMM[(COMM.index(user_game_id) - 1)]
-            elif user_game_id in ADMINS:
-                mortal_game_id = ADMINS[(ADMINS.index(user_game_id) + 1) % len(ADMINS)]
+            elif user_game_id in AM6:
+                mortal_game_id = AM6[(AM6.index(user_game_id) + 1) % len(AM6)]
+            elif user_game_id in AM7:
+                mortal_game_id = AM7[(AM7.index(user_game_id) + 1) % len(AM7)]
+            else:
+                mortal_game_id = AM8[(AM3.index(user_game_id) + 1) % len(AM8)]
 
             mortal_record = am_db.get_user_record_from_game_id(mortal_game_id).fetchone()
             if mortal_record is None:
@@ -422,25 +403,19 @@ class User:
 
     # Sends a text message to a user's angel.
     def chat_with_angel(self, text, chat_id):
-        if text == MORTAL_KEY or text == ANGEL_KEY:
-            self.anonymous_chat(text, chat_id)
+        if self.angel_chat_id != 0:
+            print("Angel to Mortal:")
+            send_message("From your Mortal:\n\n" + text, self.angel_chat_id, self.angel_name, sender_name=self.name)
         else:
-            if self.angel_chat_id != 0:
-                print("Angel to Mortal:")
-                send_message("From your Mortal:\n\n" + text, self.angel_chat_id, self.angel_name, sender_name=self.name)
-            else:
-                send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
+            send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
     # Sends a text message to a user's mortal.
     def chat_with_mortal(self, text, chat_id):
-        if text == MORTAL_KEY or text == ANGEL_KEY:
-            self.anonymous_chat(text, chat_id)
+        if self.mortal_chat_id != 0:
+            print("Mortal to Angel:")
+            send_message("From your Angel:\n\n" + text, self.mortal_chat_id, self.mortal_name, sender_name=self.name)
         else:
-            if self.mortal_chat_id != 0:
-                print("Mortal to Angel:")
-                send_message("From your Angel:\n\n" + text, self.mortal_chat_id, self.mortal_name, sender_name=self.name)
-            else:
-                send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
+            send_message(SEND_CONNECTION_FAILED, chat_id, self.name)
 
 
 # Searches existing user list for a registered user and stages the user
@@ -471,7 +446,7 @@ def setup_user_then_stage(text, chat_id, name, user_list):
 
 # Entry point of telegram bot script
 def main():
-    last_update_id = None  # represents offset to be sent in get_updates
+    last_update_id = None # represents offset to be sent in get_updates
     while True:
         updates = get_updates(last_update_id)
         try:
