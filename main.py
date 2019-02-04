@@ -1,9 +1,9 @@
-import json # JSON lib
-import requests # HTTP lib
-import os # used to access env variables
+import json  # JSON lib
+import requests  # HTTP lib
+import os  # used to access env variables
 import time
-import urllib.parse # lib that deals with urls
-from dbhelper import * # imports all user-defined functions to
+import urllib.parse  # lib that deals with urls
+from dbhelper import *  # imports all user-defined functions to
 
 TOKEN = os.environ['TELEGRAM_BOT_TOKEN']
 BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
@@ -11,8 +11,8 @@ BASE_URL = "https://api.telegram.org/bot{}/".format(TOKEN)
 # groups based on tolerance level, each player is assigned an 8-character unique alphanumeric identifier - game id
 # 8 groups for RC4 Angel Mortal games: AM1, AM2, AM3, AM4, AM5, AM6, AM7, AM8
 # index to the left: ANGEL | index to the right: MORTAL
-AM = ["kD7yj3mj", "IOh92V4D", "kXoSZTyc", "VotCq4ot", "K7uzdofB"]
-AM2 = ["kangming", "zhiyu", "ben", "shaoyi", "chinnfang"]
+AM = []
+AM2 = []
 AM3 = []
 AM4 = []
 AM5 = []
@@ -38,15 +38,37 @@ SMILEY = u"\U0001F642"
 SPOUTING_WHALE = u"\U0001F433"
 SPEECH_BUBBLE = u"\U0001F4AC"
 THINKING_FACE = u"\U0001F914"
+QUESTION_MARK = u"\U0001F64F"
+MONKEY = u"\U0001F64A"
+
+# TELEGRAM KEYBOARD KEYS
+ABOUT_THE_BOT_KEY = u"About the Bot" + " " + SPOUTING_WHALE
+ADMIN_KEY = u"/admin"
+ANGEL_KEY = u"/angel"
+ANONYMOUS_CHAT_KEY = u"Angel-Mortal Anonymous Chat" + " " + SPEECH_BUBBLE
+HELP_KEY = u"Help" + " " + QUESTION_MARK
+RULES_KEY = u"Rules" + " " + MONKEY
+MENU_KEY = u"/mainmenu"
+MORTAL_KEY = u"/mortal"
+SEND_ALL_KEY = u"/Send_All"
+SEND_ONE_KEY = u"/Send_One"
+CHECK_REGIS_KEY = u"/Check_Player_Registration"
+
+# TELEGRAM KEYBOARD OPTIONS
+AM_KEYBOARD_OPTIONS = [ANGEL_KEY, MORTAL_KEY, MENU_KEY]
+KEYBOARD_OPTIONS = [ANONYMOUS_CHAT_KEY, ABOUT_THE_BOT_KEY, HELP_KEY, RULES_KEY]
+ADMIN_KEYBOARD = [SEND_ALL_KEY, SEND_ONE_KEY, CHECK_REGIS_KEY]
 
 # GREETINGS
 ABOUT_THE_BOT = SPOUTING_WHALE + " *About OrcaBot* " + SPOUTING_WHALE + "\n\n" + CAKE + " Birthday: June 2017\n\n" +\
-                ROBOT + " Currently maintained by Kang Ming + Zhi Yu :)\n\n" + SKULL +\
-                " Past Bot Developers: Bai Chuan, Fiz, Youkuan\n\n"
-AM_GREETING = "Hello there, Anonymous! Click or type any of the following:\n" +\
-               "/angel: Chat with your Angel\n" +\
-               "/mortal: Chat with your Mortal\n" +\
-               "/mainmenu: Exits the Chat feature, and return to the Main Menu"
+                ROBOT + " Currently maintained by Shao Yi\n\n" + SKULL +\
+                " Past Bot Developers: Bai Chuan, Fiz, Youkuan, Kang Ming, Zhi Yu\n\n"
+AM_GREETING = "Hello there, {}!\n\n" +\
+              "Click or type any of the following:\n" +\
+              "/angel: Chat with your Angel\n" +\
+              "/mortal: Chat with your Mortal\n" +\
+              "/mainmenu: Exits the Chat feature, and returns to the Main Menu"
+
 AM_LOGIN_GREETING = "Please enter your 8-character Game ID.\n\n" +\
                      "or click /mainmenu to exit the registration process"
 INVALID_PIN = "You have entered the wrong 8-character Game ID. Please try again, or type /mainmenu to exit."
@@ -64,22 +86,70 @@ SUCCESSFUL_MORTAL_CONNECTION = "You have been connected with your Mortal." +\
                                " Anything you type here will be sent anonymously to him/her.\n" +\
                                "To exit, type /mainmenu"
 HELLO_GREETING = "Hello there, {}! Oscar at your service! " + SPOUTING_WHALE
-HELP_MESSAGE = "<User guide for bot features>\n\n"
-GAME_RULES_MESSAGE = "<Insert games rules>"
+HELP_MESSAGE = "Hello there, {}!\n\n" +\
+               "Orcabot is a homegrown telegram bot that allows you to anonymously chat with your Angel or Mortal.\n\n" +\
+               "While in the Main Menu, click on:\n" +\
+               ANONYMOUS_CHAT_KEY + ": To chat with your Angel or Mortal\n" +\
+               ABOUT_THE_BOT_KEY + ": To view information about the bot\n" +\
+               HELP_KEY + ": To explore this bot's functionality\n" +\
+               RULES_KEY + ": To view the game rules\n\n" +\
+               "While in the Chat feature, type any of the following to:\n" +\
+               ANGEL_KEY + ": Chat with your Angel\n" +\
+               MORTAL_KEY + ": Chat with your Mortal\n\n" +\
+               "Type " + MENU_KEY + " at any point in time to exit the Chat feature, and return to the Main Menu\n\n" +\
+               "Please message @shaozyi @amosaiden if you need technical assistance!\n" +\
+               "Thank you and we hope you'll have fun throughout this game! :)"
+GAME_RULES_MESSAGE = "How Discovering True Friends work\n\n" +\
+                     "Each of you who participated will be assigned an Angel and a Mortal. " +\
+                     "Of course, you will know the identity of your Mortal while your angel’s identity will be kept " +\
+                     "from you. Throughout the course of the event, feel free to chat with both your angel and mortal " +\
+                     "through OrcaBot where your identity will be kept secret, and take care of your mortal with " +\
+                     "anonymous gift and pranks according to their indicated tolerance levels! " +\
+                     "Of course, you can look forward to seeing what your own angel does for you as well!\n\n" +\
+                     "Explanation for tolerance levels\n\n" +\
+                     "Tolerance Levels\n" +\
+                     "1: Gift Exchange, do nice things only!\n" +\
+                     "2: Pranks are to be minimal, and no clean up required!\n" +\
+                     "3: Pranks are fine, minimal clean up.\n" +\
+                     "4: Minor inconveniences are encouraged!\n" +\
+                     "5: I don’t mind my door taped up.\n" +\
+                     "1 – 5 can’t come into room\n\n" +\
+                     "Dos :)\n" +\
+                     "• Observe the Tolerance Levels your mortals have indicated.\n" +\
+                     "• Try to accommodate (if any) requests of your mortals e.g. avoid allergies\n" +\
+                     "• Balance out the pranks with gifts - moderation is key!\n" +\
+                     "• Try (your best) to keep your identity hidden.\n" +\
+                     "• Be active in the event! :)\n" +\
+                     "• Share your pranks and gifts throughout the event in the group chat!\n\n" +\
+                     "Don'ts :(\n" +\
+                     "• Cause major damage (eg. breaking a treasured object) even if they’ve indicated no boundaries.\n" +\
+                     "• Flout other RC/NUS rules (e.g. theft, possession of alcohol *ahem ahem*).\n" +\
+                     "• Cause major inconveniences, especially along the common corridor" +\
+                     "(e.g. blockade the walkway, pranks involving powdered substances like flour or curry powder).\n" +\
+                     "• Cause fire hazards and hinder evacuation routes.\n" +\
+                     "• Write, draw or scribble any obscene/vulgar contents on doors/common area.\n\n" +\
+                     "If you have any other questions, concerns or doubts, don’t be afraid to reach out to the" +\
+                     " organizing comm! We hope you have fun and make new friends as well!\n\n" +\
+                     "Best regards,\n" +\
+                     "Your Organizing Committee"
 
-# TELEGRAM KEYBOARD KEYS
-ABOUT_THE_BOT_KEY = u"About the Bot" + " " + SPOUTING_WHALE
-ADMIN_KEY = u"/admin"
-ANGEL_KEY = u"/angel"
-ANONYMOUS_CHAT_KEY = u"Angel-Mortal Anonymous Chat" + " " + SPEECH_BUBBLE
-HELP_KEY = u"/help"
-RULES_KEY = u"/rules"
-MENU_KEY = u"/mainmenu"
-MORTAL_KEY = u"/mortal"
+# HELP_MESSAGE = "<User guide for bot features>\n\n"
+# GAME_RULES_MESSAGE = "<Insert games rules>"
 
-# TELEGRAM KEYBOARD OPTIONS
-AM_KEYBOARD_OPTIONS = [ANGEL_KEY, MORTAL_KEY, MENU_KEY]
-KEYBOARD_OPTIONS = [ANONYMOUS_CHAT_KEY, ABOUT_THE_BOT_KEY, HELP_KEY, RULES_KEY]
+# # TELEGRAM KEYBOARD KEYS
+# ABOUT_THE_BOT_KEY = u"About the Bot" + " " + SPOUTING_WHALE
+# ADMIN_KEY = u"/admin"
+# ANGEL_KEY = u"/angel"
+# ANONYMOUS_CHAT_KEY = u"Angel-Mortal Anonymous Chat" + " " + SPEECH_BUBBLE
+# HELP_KEY = u"/help"
+# RULES_KEY = u"/rules"
+# MENU_KEY = u"/mainmenu"
+# MORTAL_KEY = u"/mortal"
+
+# # TELEGRAM KEYBOARD OPTIONS
+# AM_KEYBOARD_OPTIONS = [ANGEL_KEY, MORTAL_KEY, MENU_KEY]
+# KEYBOARD_OPTIONS = [ANONYMOUS_CHAT_KEY, ABOUT_THE_BOT_KEY, HELP_KEY, RULES_KEY]
+
 
 
 # Sends a HTTP GET request using the given url.
@@ -123,6 +193,7 @@ def get_last_chat_id_and_text(updates):
     last_update = num_updates - 1
     text = updates["result"][last_update]["message"]["text"]
     chat_id = updates["result"][last_update]["message"]["chat"]["id"]
+
     return text, chat_id
 
 
@@ -175,6 +246,7 @@ class User:
             send_message(formatted_hello_greeting, chat_id, self.name, reply_markup=keyboard)
 
         elif text == ABOUT_THE_BOT_KEY:
+
             send_message(ABOUT_THE_BOT, chat_id, self.name)
             keyboard = build_keyboard(KEYBOARD_OPTIONS)
             send_message(formatted_hello_greeting, chat_id, self.name, reply_markup=keyboard)
@@ -218,6 +290,27 @@ class User:
         else:
             send_message(SEND_ADMIN_GREETING, chat_id, self.name, reply_markup=remove_keyboard())
             self.stage = self.send_all
+        elif text == SEND_ONE_KEY:
+            send_message("Please key in the Game ID of the participant", chat_id, self.name)
+            self.stage = self.receive_game_id
+        elif text == CHECK_REGIS_KEY:
+            send_message("Reply 'Y' to check registration status, or 'N' to return to mainmenu.", chat_id, self.name)
+            self.stage = self.check_registration
+
+    # helper function that fetches chat_id from database using game_id and sends text to the chat_id
+    def fetch_then_send(self, text, game_id):
+        owner_data = am_db.get_user_record_from_game_id(game_id)
+        recipient_data = owner_data.fetchone()
+        if recipient_data is not None:
+            send_message("From the Admin:\n" + text, recipient_data[2], self.name)
+
+    # chat_id is required to match the number of parameters in stage()
+    # Sends a message to all players if administrator credentials are approved.
+    def send_all(self, text, chat_id):
+        list_of_ids = AM1 + AM2 + AM3 + AM4 + AM5 + + COMM + ADMINS
+        for game_id in list_of_ids:
+            self.fetch_then_send(text, game_id)
+        return
 
     # chat_id is required to match the number of parameters in stage()
     # Sends a message to all players if administrator credentials are approved.
